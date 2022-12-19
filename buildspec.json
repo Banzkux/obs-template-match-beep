@@ -6,6 +6,12 @@
             "branch": "master",
             "hash": "e8dc70d0eef4503378d6ac300e680215eb5c9379"
         },
+        "opencv": {
+            "version": "4.6.0",
+            "repository": "https://github.com/opencv/opencv.git",
+            "branch": "master",
+            "hash": "b0dc474160e389b9c9045da5db49d03ae17c6a6b"
+        },
         "prebuilt": {
             "version": "2022-08-02",
             "baseUrl": "https://github.com/obsproject/obs-deps/releases/download",

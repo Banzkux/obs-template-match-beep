@@ -11,9 +11,13 @@ set(MACOS_BUNDLEID "com.example.${CMAKE_PROJECT_NAME}")
 
 set(LINUX_MAINTAINER_EMAIL "acebanzkux@gmail.com")
 
+set(OBS_DIRECTORY "" CACHE PATH "Directory to OBS installation.")
+
+set(OBS_PLATFORM "")
+
 # Add your custom source files here - header files are optional and only required for visibility
 # e.g. in Xcode or Visual Studio
-target_sources(${CMAKE_PROJECT_NAME} PRIVATE src/plugin-main.c)
+target_sources(${CMAKE_PROJECT_NAME} PRIVATE src/template-match-beep.cpp src/FrameIngest.cpp)
 
 # Import libobs as main plugin dependency
 find_package(libobs REQUIRED)
@@ -36,9 +40,20 @@ set_target_properties(
              AUTORCC ON)
 #]]
 
-configure_file(src/plugin-macros.h.in ${CMAKE_SOURCE_DIR}/src/plugin-macros.generated.h)
+find_package(OpenCV REQUIRED core highgui imgcodecs imgproc)
+if(NOT OpenCV_FOUND)
+    message(FATAL_ERROR "Failed to find the required OpenCV libaries!")
+else()
+    message(STATUS "${MI}Found OpenCV: YES")
+    message(STATUS "${MI}OpenCV Version: ${OpenCV_VERSION}")
+    message(STATUS "${MI}OpenCV Modules: ${OpenCV_LIBS}")
+endif()
+message(STATUS ${OpenCV_LIBS})
+target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE opencv_core opencv_highgui opencv_imgcodecs opencv_imgproc)
 
-target_sources(${CMAKE_PROJECT_NAME} PRIVATE src/plugin-macros.generated.h)
+configure_file(src/template-match-beep.h.in ${CMAKE_SOURCE_DIR}/src/template-match-beep.generated.h)
+
+target_sources(${CMAKE_PROJECT_NAME} PRIVATE src/template-match-beep.generated.h src/FrameIngest.hpp)
 
 # /!\ TAKE NOTE: No need to edit things past this point /!\
 
@@ -58,9 +73,36 @@ if(OS_WINDOWS)
   configure_file(cmake/bundle/windows/resource.rc.in ${CMAKE_BINARY_DIR}/${CMAKE_PROJECT_NAME}.rc)
   target_sources(${CMAKE_PROJECT_NAME} PRIVATE ${CMAKE_BINARY_DIR}/${CMAKE_PROJECT_NAME}.rc)
 
+  if(CMAKE_GENERATOR_PLATFORM STREQUAL "x64")
+    set(OBS_PLATFORM "64bit")
+  else()
+    set(OBS_PLATFORM "32bit")
+  endif()
+
   if(MSVC)
     target_compile_options(${CMAKE_PROJECT_NAME} PRIVATE /W4)
+    set_target_properties(
+        ${CMAKE_PROJECT_NAME} PROPERTIES
+        if(OBS_PLATFORM STREQUAL "64bit")
+          VS_DEBUGGER_COMMAND "${OBS_DIRECTORY}/bin/${OBS_PLATFORM}/obs64.exe"
+        else()
+          VS_DEBUGGER_COMMAND "${OBS_DIRECTORY}/bin/${OBS_PLATFORM}/obs32.exe"
+        endif()
+        VS_DEBUGGER_WORKING_DIRECTORY "${OBS_DIRECTORY}/bin/${OBS_PLATFORM}")
   endif()
+
+  add_custom_command(
+    TARGET ${CMAKE_PROJECT_NAME}
+    POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E
+    copy
+        $<TARGET_FILE:${CMAKE_PROJECT_NAME}>
+        ${OBS_DIRECTORY}/obs-plugins/${OBS_PLATFORM}/$<TARGET_FILE_NAME:${CMAKE_PROJECT_NAME}>
+    COMMAND ${CMAKE_COMMAND} -E
+    copy
+        ${CMAKE_BINARY_DIR}/Debug/${CMAKE_PROJECT_NAME}.pdb
+        ${OBS_DIRECTORY}/obs-plugins/${OBS_PLATFORM}/${CMAKE_PROJECT_NAME}.pdb
+)
   # --- End of section ---
 
   # -- macOS specific build settings and tasks --
@@ -80,5 +122,5 @@ else()
   target_compile_options(${CMAKE_PROJECT_NAME} PRIVATE -Wall)
 endif()
 # --- End of section ---
-
+target_compile_features(${CMAKE_PROJECT_NAME} PRIVATE cxx_std_17)
 setup_plugin_target(${CMAKE_PROJECT_NAME})
