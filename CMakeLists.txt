@@ -91,18 +91,20 @@ if(OS_WINDOWS)
         VS_DEBUGGER_WORKING_DIRECTORY "${OBS_DIRECTORY}/bin/${OBS_PLATFORM}")
   endif()
 
-  add_custom_command(
-    TARGET ${CMAKE_PROJECT_NAME}
-    POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E
-    copy
-        $<TARGET_FILE:${CMAKE_PROJECT_NAME}>
-        ${OBS_DIRECTORY}/obs-plugins/${OBS_PLATFORM}/$<TARGET_FILE_NAME:${CMAKE_PROJECT_NAME}>
-    COMMAND ${CMAKE_COMMAND} -E
-    copy
-        ${CMAKE_BINARY_DIR}/Debug/${CMAKE_PROJECT_NAME}.pdb
-        ${OBS_DIRECTORY}/obs-plugins/${OBS_PLATFORM}/${CMAKE_PROJECT_NAME}.pdb
-)
+  if (OBS_DIRECTORY)
+    add_custom_command(
+      TARGET ${CMAKE_PROJECT_NAME}
+      POST_BUILD
+      COMMAND ${CMAKE_COMMAND} -E
+      copy
+          $<TARGET_FILE:${CMAKE_PROJECT_NAME}>
+          ${OBS_DIRECTORY}/obs-plugins/${OBS_PLATFORM}/$<TARGET_FILE_NAME:${CMAKE_PROJECT_NAME}>
+      COMMAND ${CMAKE_COMMAND} -E
+      copy
+          ${CMAKE_BINARY_DIR}/Debug/${CMAKE_PROJECT_NAME}.pdb
+          ${OBS_DIRECTORY}/obs-plugins/${OBS_PLATFORM}/${CMAKE_PROJECT_NAME}.pdb
+    )
+  endif()
   # --- End of section ---
 
   # -- macOS specific build settings and tasks --
