@@ -1,6 +1,6 @@
 # please use clang-format version 8 or later
 
-Standard: Cpp11
+Standard: c++17
 AccessModifierOffset: -8
 AlignAfterOpenBracket: Align
 AlignConsecutiveAssignments: false
