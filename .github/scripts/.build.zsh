@@ -40,7 +40,7 @@ build() {
   trap '_trap_error' ZERR
 
   fpath=("${SCRIPT_HOME}/utils.zsh" ${fpath})
-  autoload -Uz log_info log_error log_output set_loglevel check_${host_os} setup_${host_os} setup_obs setup_ccache
+  autoload -Uz log_info log_error log_output set_loglevel check_${host_os} setup_${host_os} setup_obs setup_opencv setup_ccache
 
   if [[ ! -r ${buildspec_file} ]] {
     log_error \
@@ -187,6 +187,8 @@ Usage: %B${functrace[1]%:*}%b <option> [<options>]
 
   setup_obs
 
+  setup_opencv
+
   pushd ${project_root}
   if (( ! (${skips[(Ie)all]} + ${skips[(Ie)build]}) )) {
     log_info "Configuring ${product_name}..."
@@ -241,6 +243,15 @@ Usage: %B${functrace[1]%:*}%b <option> [<options>]
   local -a cmake_args=()
   if (( _loglevel > 1 )) cmake_args+=(--verbose)
   cmake --install build_${target##*-} --config ${BUILD_CONFIG:-RelWithDebInfo} --prefix "${project_root}/release" ${cmake_args}
+  local targetbit=''
+  log_info "TARGET: ${target##*-}"
+  if [[ ${target##*-} == 'x86_64' || ${target##*-} == 'x64' ]]
+  then 
+    targetbit="64bit"
+  else 
+    targetbit="32bit" 
+  fi
+  cp -ra ${project_root}/../opencv/plugin_build_${target##*-}/lib/. ${project_root}/release/obs-plugins/${targetbit}
   popd
 }
 

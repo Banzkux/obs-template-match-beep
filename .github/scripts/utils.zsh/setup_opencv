@@ -1,0 +1,143 @@
+autoload -Uz log_error log_info log_status
+
+if (( ! ${+buildspec_file} )) {
+  log_error "'buildspec_file' not set. Please set before running ${0}."
+  return 2
+}
+
+if (( ! ${+commands[git]} )) {
+  log_error 'git not found. Please install git.'
+  return 2
+}
+
+if (( ! ${+commands[jq]} )) {
+  log_error 'jq not found. Please install jq.'
+  return 2
+}
+
+if (( ! ${+project_root} )) {
+  log_error "'project_root' not set. Please set before running ${0}."
+  return 2
+}
+
+if (( ! ${+target} )) {
+  log_error "'target' not set. Please set before running ${0}."
+  return 2
+}
+
+log_info 'Setting up opencv...'
+
+local opencv_version
+local opencv_repo
+local opencv_branch
+local opencv_hash
+
+read -r opencv_version opencv_repo opencv_branch opencv_hash <<< \
+  "$(jq -r --arg key "opencv" \
+     '.dependencies[$key] | {version, repository, branch, hash} | join(" ")' \
+     ${buildspec_file})"
+
+if [[ -z ${opencv_version} ]] {
+  log_error "No opencv version found in buildspec.json"
+  return 2
+}
+
+pushd
+mkcd ${project_root:h}/opencv
+
+if (( ! (${skips[(Ie)all]} + ${skips[(Ie)unpack]}) )) {
+  if [[ -d .git ]] {
+    git config advice.detachedHead false
+    git config remote.pluginbuild.url "${opencv_repo:-https://github.com/opencv/opencv.git}"
+    git config remote.pluginbuild.fetch "+refs/heads/${opencv_branch:-master}:refs/remotes/origin/${opencv_branch:-master}"
+
+    git rev-parse -q --verify "${opencv_hash}^{commit}" > /dev/null || git fetch pluginbuild
+    git checkout ${opencv_hash:-master} -B ${product_name}
+    git reset --hard "${opencv_hash}"
+    log_status 'Found existing opencv repository.'
+  } else {
+    git clone "${opencv_repo:-https://github.com/opencv/opencv.git}" "${PWD}"
+    git config advice.detachedHead false
+    git checkout -f "${opencv_hash}" --
+    git checkout ${opencv_hash:-master} -b ${product_name}
+    log_status 'opencv checked out.'
+  }
+
+  git submodule foreach --recursive git submodule sync
+  git submodule update --init --recursive
+}
+
+if (( ! (${skips[(Ie)all]} + ${skips[(Ie)build]}) )) {
+  log_info 'Configuring opencv...'
+
+  local -a cmake_args=(
+    -DCMAKE_BUILD_TYPE=${BUILD_CONFIG:-Release}
+    -DBUILD_PERF_TESTS=OFF
+    -DBUILD_TESTS=OFF
+    -DBUILD_WITH_DEBUG_INFO=OFF
+    -DBUILD_opencv_apps=OFF
+    -DBUILD_opencv_calib3d=OFF
+    -DBUILD_opencv_dnn=OFF
+    -DBUILD_opencv_features2d=OFF
+    -DBUILD_opencv_flann=OFF
+    -DBUILD_opencv_highgui=ON
+    -DBUILD_opencv_gapi=OFF
+    -DBUILD_opencv_java_bindings_generator=OFF
+    -DBUILD_opencv_js=OFF
+    -DBUILD_opencv_js_bindings_generator=OFF
+    -DBUILD_opencv_ml=OFF
+    -DBUILD_opencv_objc_bindings_generator=OFF
+    -DBUILD_opencv_objdetect=OFF
+    -DBUILD_opencv_photo=OFF
+    -DBUILD_opencv_python3=OFF
+    -DBUILD_opencv_python_bindings_generator=OFF
+    -DBUILD_opencv_python_tests=OFF
+    -DBUILD_opencv_stitching=OFF
+    -DBUILD_opencv_ts=OFF
+    -DBUILD_opencv_video=OFF
+    -DBUILD_opencv_videoio=OFF
+    -DBUILD_opencv_world=OFF
+    -DCMAKE_INSTALL_PREFIX="${project_root:h}/obs-build-dependencies/plugin-deps-${OBS_DEPS_VERSION}-qt${QT_VERSION}-${target##*-}"
+    -DCMAKE_PREFIX_PATH="${project_root:h}/obs-build-dependencies/plugin-deps-${OBS_DEPS_VERSION}-qt${QT_VERSION}-${target##*-}"
+  )
+
+  if (( _loglevel == 0 )) cmake_args+=(-Wno_deprecated -Wno-dev --log-level=ERROR)
+  if (( _loglevel > 2 )) cmake_args+=(--debug-output)
+
+  local num_procs
+
+  case ${target} {
+    macos-*)
+      autoload -Uz read_codesign
+      if (( ${+CODESIGN} )) {
+        read_codesign
+      }
+
+      cmake_args+=(
+        -DCMAKE_OSX_ARCHITECTURES=${${target##*-}//universal/x86_64;arm64}
+        -DCMAKE_OSX_DEPLOYMENT_TARGET=${DEPLOYMENT_TARGET:-10.15}
+        -DOBS_CODESIGN_LINKER=ON
+        -DOBS_BUNDLE_CODESIGN_IDENTITY="${CODESIGN_IDENT:--}"
+      )
+      num_procs=$(( $(sysctl -n hw.ncpu) + 1 ))
+      ;;
+    linux-*)
+      cmake_args+=(
+        -DENABLE_PIPEWIRE=OFF
+      )
+      num_procs=$(( $(nproc) + 1 ))
+      ;;
+  }
+
+  log_debug "Attempting to configure OpenCV with CMake arguments: ${cmake_args}"
+  cmake -S . -B plugin_build_${target##*-} -G ${generator} ${cmake_args}
+
+  log_info 'Building OpenCV'
+  local -a cmake_args=()
+  if (( _loglevel > 1 )) cmake_args+=(--verbose)
+  if [[ ${generator} == 'Unix Makefiles' ]] cmake_args+=(--parallel ${num_procs})
+  cmake --build plugin_build_${target##*-} --config ${BUILD_CONFIG:-Release} ${cmake_args}
+  cmake --install plugin_build_${target##*-} --config ${BUILD_CONFIG:-Release} ${cmake_args}
+}
+
+popd

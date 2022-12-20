@@ -35,10 +35,18 @@ void beep(int freq, int duration)
 	Beep(freq, duration);
 }
 #elif __linux__
-#include <stdio.h>
+#include <iostream>
+#include <sys/ioctl.h>
+#include <fcntl.h>
+#include <linux/kd.h> 
+#include <unistd.h>
 void beep(int freq, int duration)
 {
-	system("echo -e "\007 " >/dev/tty10");
+	int fd = open("/dev/console", O_WRONLY);
+	ioctl(fd, KIOCSOUND, (int)(1193180/freq));
+	usleep(1000*duration);
+	ioctl(fd, KIOCSOUND, 0);
+	close(fd);
 }
 #endif
 
