@@ -51,13 +51,6 @@ endif()
 message(STATUS ${OpenCV_LIBS})
 target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE opencv_core opencv_highgui opencv_imgcodecs opencv_imgproc)
 
-find_package(ALSA REQUIRED)                                    
-if (ALSA_FOUND)                                                
-    include_directories(${ALSA_INCLUDE_DIRS})
-    message(STATUS ${ALSA_LIBRARIES})             
-    target_link_libraries (${CMAKE_PROJECT_NAME} PRIVATE ${ALSA_LIBRARIES})      
-endif(ALSA_FOUND)  
-
 configure_file(src/template-match-beep.h.in ${CMAKE_SOURCE_DIR}/src/template-match-beep.generated.h)
 set(ABEEP_H src/vendor/abeep/abeep.h src/vendor/abeep/sintable.h)
 target_sources(${CMAKE_PROJECT_NAME} PRIVATE src/template-match-beep.generated.h src/vendor/LiveVisionKit/FrameIngest.hpp src/vendor/beep/beep.h ${ABEEP_H})
@@ -129,6 +122,13 @@ elseif(OS_MACOS)
   # --- Linux-specific build settings and tasks ---
 else()
   target_compile_options(${CMAKE_PROJECT_NAME} PRIVATE -Wall)
+
+  find_package(ALSA REQUIRED)                                    
+    if (ALSA_FOUND)                                                
+        include_directories(${ALSA_INCLUDE_DIRS})
+        message(STATUS ${ALSA_LIBRARIES})             
+        target_link_libraries (${CMAKE_PROJECT_NAME} PRIVATE ${ALSA_LIBRARIES})      
+    endif(ALSA_FOUND)  
 endif()
 # --- End of section ---
 target_compile_features(${CMAKE_PROJECT_NAME} PRIVATE cxx_std_17)
