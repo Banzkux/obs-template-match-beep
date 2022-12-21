@@ -1,3 +1,4 @@
+#if __linux__
 #if !defined SINTABLE_H
 #define SINTABLE_H
 
@@ -20,3 +21,4 @@ static int16_t sintable(unsigned int index) {
 
 #endif
 
+#endif

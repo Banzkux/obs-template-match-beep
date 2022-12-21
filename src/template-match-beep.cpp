@@ -25,7 +25,6 @@ with this program. If not, see <https://www.gnu.org/licenses/>
 #include <math.h>
 #include "vendor/LiveVisionKit/FrameIngest.hpp"
 #include "vendor/beep/beep.h"
-#include "vendor/abeep/abeep.h"
 
 #include "template-match-beep.generated.h"
 
@@ -46,7 +45,7 @@ OBS_MODULE_USE_DEFAULT_LOCALE(PLUGIN_NAME, "en-US")
 #define SETTING_PATH "template_path"
 #define SETTING_STATUS "status"
 
-#define TEXT_DELAY_MS obs_module_text("Timerr")
+#define TEXT_DELAY_MS obs_module_text("Timer")
 #define TEXT_COOLDOWN_MS obs_module_text("Cooldown timer")
 #define TEXT_PATH obs_module_text("Template image path")
 #define TEXT_STATUS std::string("Status: ")
