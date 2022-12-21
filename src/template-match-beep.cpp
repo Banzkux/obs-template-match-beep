@@ -23,32 +23,12 @@ with this program. If not, see <https://www.gnu.org/licenses/>
 #include <chrono>
 #include <thread>
 #include <math.h>
-#include "FrameIngest.hpp"
+#include "vendor/LiveVisionKit/FrameIngest.hpp"
+#include "vendor/beep/beep.h"
+#include "vendor/abeep/abeep.h"
 
 #include "template-match-beep.generated.h"
 
-void beep(int freq, int duration);
-#ifdef _WIN32
-#include <Windows.h>
-void beep(int freq, int duration)
-{
-	Beep(freq, duration);
-}
-#elif __linux__
-#include <iostream>
-#include <sys/ioctl.h>
-#include <fcntl.h>
-#include <linux/kd.h> 
-#include <unistd.h>
-void beep(int freq, int duration)
-{
-	int fd = open("/dev/console", O_WRONLY);
-	ioctl(fd, KIOCSOUND, (int)(1193180/freq));
-	usleep(1000*duration);
-	ioctl(fd, KIOCSOUND, 0);
-	close(fd);
-}
-#endif
 
 OBS_DECLARE_MODULE()
 OBS_MODULE_USE_DEFAULT_LOCALE(PLUGIN_NAME, "en-US")
@@ -133,9 +113,9 @@ static void *template_match_beep_filter_create(obs_data_t *settings,
 
 	filter->context = context;
 	template_match_beep_filter_update(filter, settings);
-
 	filter->current_frame = nullptr;
-	filter->state = TEXT_STATUS + "Created";
+	std::string abc(TEXT_STATUS + "Created");
+	filter->state = abc;
 	filter->timer_video_ts = 0;
 	filter->thread_active = true;
 	filter->thread = std::thread(thread_loop, (void *)filter);
@@ -148,7 +128,6 @@ static void template_match_beep_filter_destroy(void *data)
 		(template_match_beep_data *)data;
 
 	filter->thread_active = false;
-
 	bfree(data);
 }
 

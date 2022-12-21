@@ -17,7 +17,7 @@ set(OBS_PLATFORM "")
 
 # Add your custom source files here - header files are optional and only required for visibility
 # e.g. in Xcode or Visual Studio
-target_sources(${CMAKE_PROJECT_NAME} PRIVATE src/template-match-beep.cpp src/FrameIngest.cpp)
+target_sources(${CMAKE_PROJECT_NAME} PRIVATE src/template-match-beep.cpp src/vendor/LiveVisionKit/FrameIngest.cpp src/vendor/abeep/sintable.c)
 
 # Import libobs as main plugin dependency
 find_package(libobs REQUIRED)
@@ -51,9 +51,16 @@ endif()
 message(STATUS ${OpenCV_LIBS})
 target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE opencv_core opencv_highgui opencv_imgcodecs opencv_imgproc)
 
-configure_file(src/template-match-beep.h.in ${CMAKE_SOURCE_DIR}/src/template-match-beep.generated.h)
+find_package(ALSA REQUIRED)                                    
+if (ALSA_FOUND)                                                
+    include_directories(${ALSA_INCLUDE_DIRS})
+    message(STATUS ${ALSA_LIBRARIES})             
+    target_link_libraries (${CMAKE_PROJECT_NAME} PRIVATE ${ALSA_LIBRARIES})      
+endif(ALSA_FOUND)  
 
-target_sources(${CMAKE_PROJECT_NAME} PRIVATE src/template-match-beep.generated.h src/FrameIngest.hpp)
+configure_file(src/template-match-beep.h.in ${CMAKE_SOURCE_DIR}/src/template-match-beep.generated.h)
+set(ABEEP_H src/vendor/abeep/abeep.h src/vendor/abeep/sintable.h)
+target_sources(${CMAKE_PROJECT_NAME} PRIVATE src/template-match-beep.generated.h src/vendor/LiveVisionKit/FrameIngest.hpp src/vendor/beep/beep.h ${ABEEP_H})
 
 # /!\ TAKE NOTE: No need to edit things past this point /!\
 
