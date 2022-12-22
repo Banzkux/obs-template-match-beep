@@ -40,18 +40,34 @@ OBS_MODULE_USE_DEFAULT_LOCALE(PLUGIN_NAME, "en-US")
 #define MSEC_TO_SEC 0.001
 #endif
 
+#define SETTING_AUTO_ROI "auto_roi"
 #define SETTING_DELAY_MS "delay_ms"
 #define SETTING_COOLDOWN_MS "cooldown_ms"
 #define SETTING_PATH "template_path"
 #define SETTING_STATUS "status"
+#define SETTING_XYGROUP "xygroup"
+#define SETTING_XYGROUP_X1 "xygroup_x1"
+#define SETTING_XYGROUP_X2 "xygroup_x2"
+#define SETTING_XYGROUP_Y1 "xygroup_y1"
+#define SETTING_XYGROUP_Y2 "xygroup_y2"
 
+#define TEXT_AUTO_ROI obs_module_text("Automatic ROI on next detection")
 #define TEXT_DELAY_MS obs_module_text("Timer")
 #define TEXT_COOLDOWN_MS obs_module_text("Cooldown timer")
 #define TEXT_PATH obs_module_text("Template image path")
 #define TEXT_STATUS std::string("Status: ")
+#define TEXT_XYGROUP obs_module_text("Region of interest")
+#define TEXT_XYGROUP_X1 obs_module_text("Top left X")
+#define TEXT_XYGROUP_X2 obs_module_text("Bottom right X")
+#define TEXT_XYGROUP_Y1 obs_module_text("Top left Y")
+#define TEXT_XYGROUP_Y2 obs_module_text("Bottom right Y")
 
 struct template_match_beep_data {
 	obs_source_t *context;
+
+	obs_properties_t *props;
+	obs_properties_t *group;
+	obs_data_t *settings;
 
 	/* contains struct obs_source_frame* */
 	obs_source_frame *current_frame;
@@ -68,6 +84,12 @@ struct template_match_beep_data {
 	bool thread_active;
 	cv::Mat template_image;
 	cv::UMat current_cv_frame;
+
+	cv::Rect roi;
+	bool auto_roi;
+	int xygroup_x1, xygroup_y1;
+	int xygroup_x2, xygroup_y2;
+	
 
 	std::unique_ptr<lvk::FrameIngest> frame_ingest;
 };
@@ -90,6 +112,21 @@ static void template_match_beep_filter_update(void *data, obs_data_t *settings)
 
 	const char *new_path =
 		(const char *)obs_data_get_string(settings, SETTING_PATH);
+
+	filter->xygroup_x1 =
+		(int)obs_data_get_int(settings, SETTING_XYGROUP_X1);
+	filter->xygroup_y1 =
+		(int)obs_data_get_int(settings, SETTING_XYGROUP_Y1);
+	filter->xygroup_x2 =
+		(int)obs_data_get_int(settings, SETTING_XYGROUP_X2);
+	filter->xygroup_y2 =
+		(int)obs_data_get_int(settings, SETTING_XYGROUP_Y2);
+
+	filter->roi =
+		cv::Rect(cv::Point(filter->xygroup_x1, filter->xygroup_y1),
+			 cv::Point(filter->xygroup_x2, filter->xygroup_y2));
+
+	filter->auto_roi = obs_data_get_bool(settings, SETTING_AUTO_ROI);
 
 	filter->timer = new_timer;
 	filter->cooldown_timer = new_cooldown;
@@ -118,6 +155,7 @@ static void *template_match_beep_filter_create(obs_data_t *settings,
 	filter->timer_video_ts = 0;
 	filter->thread_active = true;
 	filter->thread = std::thread(thread_loop, (void *)filter);
+	filter->settings = settings;
 	return filter;
 }
 
@@ -195,6 +233,25 @@ static obs_properties_t *template_match_beep_filter_properties(void *data)
 	obs_properties_add_button(props, "reset_calibration", "Reset Calibration",
 				  template_match_beep_reset_calibration);
 
+	obs_properties_t *xygroup = obs_properties_create();
+	obs_properties_add_group(props, SETTING_XYGROUP, TEXT_XYGROUP,
+				 OBS_GROUP_CHECKABLE, xygroup);
+
+	obs_properties_add_bool(xygroup, SETTING_AUTO_ROI, TEXT_AUTO_ROI);
+
+	obs_properties_add_int(xygroup, SETTING_XYGROUP_X1, TEXT_XYGROUP_X1, 0,
+			       (int)filter->current_frame->width, 1);
+	obs_properties_add_int(xygroup, SETTING_XYGROUP_Y1, TEXT_XYGROUP_Y1, 0,
+			       (int)filter->current_frame->height, 1);
+
+	obs_properties_add_int(xygroup, SETTING_XYGROUP_X2, TEXT_XYGROUP_X2, 0,
+			       (int)filter->current_frame->width, 1);
+	obs_properties_add_int(xygroup, SETTING_XYGROUP_Y2, TEXT_XYGROUP_Y2, 0,
+			       (int)filter->current_frame->height, 1);
+
+	filter->props = props;
+	filter->group = xygroup;
+
 	return props;
 }
 
@@ -245,24 +302,31 @@ void thread_loop(void* data) {
 	obs_source_frame *frame = nullptr;
 
 	while (filter->thread_active) {
-		if (frame != filter->current_frame && !filter->template_image.empty() && filter->frame_ingest) {
+		if (frame != filter->current_frame &&
+		    !filter->template_image.empty() && filter->frame_ingest) {
 			frame = filter->current_frame;
-			cv::UMat umat, umat2;
+			cv::UMat umatroi, umat, umat2, umat3;
 			filter->frame_ingest->upload(frame, umat);
+			if (!filter->roi.empty() && !filter->auto_roi &&
+			    (filter->roi.width >= filter->template_image.cols &&
+			     filter->roi.height >=
+				     filter->template_image.rows)) {
+				umat(filter->roi).copyTo(umat);
+			}
 			// Changing color format, this may become issue
 			cv::cvtColor(umat, umat2, cv::COLOR_YUV2BGR, 4);
+			
 			// Gray
-			cv::cvtColor(umat2, filter->current_cv_frame,
+			cv::cvtColor(umat2, umat3,
 				     cv::COLOR_BGR2GRAY);
 			cv::Mat result;
-			int result_cols = filter->current_cv_frame.cols -
-					  filter->template_image.cols + 1;
-			int result_rows = filter->current_cv_frame.rows -
-					  filter->template_image.rows + 1;
+			int result_cols =
+				umat3.cols - filter->template_image.cols + 1;
+			int result_rows =
+				umat3.rows - filter->template_image.rows + 1;
 			result.create(result_rows, result_cols, CV_32FC1);
 
-			cv::matchTemplate(filter->current_cv_frame,
-					  filter->template_image, result,
+			cv::matchTemplate(umat3, filter->template_image, result,
 					  cv::TM_CCOEFF_NORMED);
 
 			double minVal, maxVal;
@@ -273,18 +337,54 @@ void thread_loop(void* data) {
 
 			cv::threshold(result, result, 0.80, 1.0,
 				      cv::THRESH_TOZERO);
+			umat3.copyTo(filter->current_cv_frame);
 			// Detected template image!
 			if (maxVal > 0.8) {
+				filter->xygroup_x1 = matchLoc.x;
+				filter->xygroup_y1 = matchLoc.y;
+				filter->xygroup_x2 =
+					matchLoc.x +
+					filter->template_image.cols;
+				filter->xygroup_y2 =
+					matchLoc.y +
+					filter->template_image.rows;
 				cv::rectangle(
-					filter->current_cv_frame, matchLoc,
-					cv::Point(matchLoc.x +
-							  filter->template_image
-								  .cols,
-						  matchLoc.y +
-							  filter->template_image
-								  .rows),
+					umat3, matchLoc,
+					      cv::Point(filter->xygroup_x2,
+							filter->xygroup_y2),
 					cv::Scalar(255), 2, 8, 0);
+				if (filter->auto_roi) {
+					obs_data_set_bool(filter->settings,
+							  SETTING_AUTO_ROI,
+							  false);
+					obs_data_set_int(filter->settings,
+							  SETTING_XYGROUP_X1,
+							  matchLoc.x);
+					obs_data_set_int(filter->settings,
+							  SETTING_XYGROUP_Y1,
+							  matchLoc.y);
+					obs_data_set_int(
+						filter->settings,
+						SETTING_XYGROUP_X2,
+						filter->xygroup_x2);
+					obs_data_set_int(
+						filter->settings,
+						SETTING_XYGROUP_Y2,
+						filter->xygroup_y2);
+					filter->auto_roi = false;
 
+					filter->roi = cv::Rect(
+						matchLoc,
+						cv::Point(
+							matchLoc.x +
+								filter->template_image
+									.cols,
+							matchLoc.y +
+								filter->template_image
+									.rows));
+				}
+
+				umat3.copyTo(filter->current_cv_frame);
 				// Detection beep
 				// NOTE: the beep is synchronous!
 				beep(880, 100);
@@ -295,9 +395,10 @@ void thread_loop(void* data) {
 				preciseSleep(filter->cooldown_timer *
 					     MSEC_TO_SEC);
 			}
-		}  else {
+		} else {
 			// chill for a bit
-			std::this_thread::sleep_for(std::chrono::milliseconds(1));
+			std::this_thread::sleep_for(
+				std::chrono::milliseconds(1));
 		}
 	}
 }
