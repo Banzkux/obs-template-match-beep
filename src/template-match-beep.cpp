@@ -28,7 +28,6 @@ with this program. If not, see <https://www.gnu.org/licenses/>
 
 #include "template-match-beep.generated.h"
 
-
 OBS_DECLARE_MODULE()
 OBS_MODULE_USE_DEFAULT_LOCALE(PLUGIN_NAME, "en-US")
 
@@ -89,7 +88,6 @@ struct template_match_beep_data {
 	bool auto_roi;
 	int xygroup_x1, xygroup_y1;
 	int xygroup_x2, xygroup_y2;
-	
 
 	std::unique_ptr<lvk::FrameIngest> frame_ingest;
 };
@@ -103,7 +101,8 @@ static const char *template_match_beep_filter_name(void *unused)
 // Filters settings were updated
 static void template_match_beep_filter_update(void *data, obs_data_t *settings)
 {
-	struct template_match_beep_data *filter = (template_match_beep_data*)data;
+	struct template_match_beep_data *filter =
+		(template_match_beep_data *)data;
 	uint64_t new_timer =
 		(uint64_t)obs_data_get_int(settings, SETTING_DELAY_MS);
 
@@ -142,7 +141,7 @@ static void template_match_beep_filter_update(void *data, obs_data_t *settings)
 void thread_loop(void *data);
 
 static void *template_match_beep_filter_create(obs_data_t *settings,
-				       obs_source_t *context)
+					       obs_source_t *context)
 {
 	struct template_match_beep_data *filter =
 		(template_match_beep_data *)bzalloc(sizeof(*filter));
@@ -169,8 +168,8 @@ static void template_match_beep_filter_destroy(void *data)
 }
 
 // calibrate button was clicked
-bool template_match_beep_calibrate(obs_properties_t *props,
-				    obs_property*, void* data)
+bool template_match_beep_calibrate(obs_properties_t *props, obs_property *,
+				   void *data)
 {
 	struct template_match_beep_data *filter =
 		(template_match_beep_data *)data;
@@ -187,8 +186,8 @@ bool template_match_beep_calibrate(obs_properties_t *props,
 }
 
 // reset calibration button was clicked
-bool template_match_beep_reset_calibration(obs_properties_t *props, obs_property *,
-				    void *data)
+bool template_match_beep_reset_calibration(obs_properties_t *props,
+					   obs_property *, void *data)
 {
 	struct template_match_beep_data *filter =
 		(template_match_beep_data *)data;
@@ -218,8 +217,8 @@ static obs_properties_t *template_match_beep_filter_properties(void *data)
 						   TEXT_DELAY_MS, 0, 20000, 1);
 	obs_property_int_set_suffix(p, " ms");
 
-	obs_property_t *c = obs_properties_add_int(props, SETTING_COOLDOWN_MS,
-						   TEXT_COOLDOWN_MS, 0, 20000, 1);
+	obs_property_t *c = obs_properties_add_int(
+		props, SETTING_COOLDOWN_MS, TEXT_COOLDOWN_MS, 0, 20000, 1);
 	obs_property_int_set_suffix(c, " ms");
 
 	// obs_properties_add_path
@@ -229,8 +228,9 @@ static obs_properties_t *template_match_beep_filter_properties(void *data)
 				"*.png", NULL);
 
 	obs_properties_add_button(props, "calibrate", "Calibrate",
-					  template_match_beep_calibrate);
-	obs_properties_add_button(props, "reset_calibration", "Reset Calibration",
+				  template_match_beep_calibrate);
+	obs_properties_add_button(props, "reset_calibration",
+				  "Reset Calibration",
 				  template_match_beep_reset_calibration);
 
 	obs_properties_t *xygroup = obs_properties_create();
@@ -295,7 +295,8 @@ void preciseSleep(double seconds)
 }
 
 // Thread for template matching and beeping
-void thread_loop(void* data) {
+void thread_loop(void *data)
+{
 	struct template_match_beep_data *filter =
 		(template_match_beep_data *)data;
 
@@ -315,10 +316,9 @@ void thread_loop(void* data) {
 			}
 			// Changing color format, this may become issue
 			cv::cvtColor(umat, umat2, cv::COLOR_YUV2BGR, 4);
-			
+
 			// Gray
-			cv::cvtColor(umat2, umat3,
-				     cv::COLOR_BGR2GRAY);
+			cv::cvtColor(umat2, umat3, cv::COLOR_BGR2GRAY);
 			cv::Mat result;
 			int result_cols =
 				umat3.cols - filter->template_image.cols + 1;
@@ -348,29 +348,26 @@ void thread_loop(void* data) {
 				filter->xygroup_y2 =
 					matchLoc.y +
 					filter->template_image.rows;
-				cv::rectangle(
-					umat3, matchLoc,
+				cv::rectangle(umat3, matchLoc,
 					      cv::Point(filter->xygroup_x2,
 							filter->xygroup_y2),
-					cv::Scalar(255), 2, 8, 0);
+					      cv::Scalar(255), 2, 8, 0);
 				if (filter->auto_roi) {
 					obs_data_set_bool(filter->settings,
 							  SETTING_AUTO_ROI,
 							  false);
 					obs_data_set_int(filter->settings,
-							  SETTING_XYGROUP_X1,
-							  matchLoc.x);
+							 SETTING_XYGROUP_X1,
+							 matchLoc.x);
 					obs_data_set_int(filter->settings,
-							  SETTING_XYGROUP_Y1,
-							  matchLoc.y);
-					obs_data_set_int(
-						filter->settings,
-						SETTING_XYGROUP_X2,
-						filter->xygroup_x2);
-					obs_data_set_int(
-						filter->settings,
-						SETTING_XYGROUP_Y2,
-						filter->xygroup_y2);
+							 SETTING_XYGROUP_Y1,
+							 matchLoc.y);
+					obs_data_set_int(filter->settings,
+							 SETTING_XYGROUP_X2,
+							 filter->xygroup_x2);
+					obs_data_set_int(filter->settings,
+							 SETTING_XYGROUP_Y2,
+							 filter->xygroup_y2);
 					filter->auto_roi = false;
 
 					filter->roi = cv::Rect(
@@ -429,11 +426,10 @@ bool obs_module_load(void)
 	template_match_beep_filter.id = "template_match_beep_filter";
 	template_match_beep_filter.type = OBS_SOURCE_TYPE_FILTER,
 	template_match_beep_filter.output_flags = OBS_SOURCE_VIDEO |
-						   OBS_SOURCE_ASYNC;
+						  OBS_SOURCE_ASYNC;
 	template_match_beep_filter.get_name = template_match_beep_filter_name;
 	template_match_beep_filter.create = template_match_beep_filter_create;
-	template_match_beep_filter.destroy =
-		template_match_beep_filter_destroy;
+	template_match_beep_filter.destroy = template_match_beep_filter_destroy;
 	template_match_beep_filter.update = template_match_beep_filter_update,
 	template_match_beep_filter.get_properties =
 		template_match_beep_filter_properties;
