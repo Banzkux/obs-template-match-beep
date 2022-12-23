@@ -89,11 +89,11 @@ if(OS_WINDOWS)
     set_target_properties(
         ${CMAKE_PROJECT_NAME} PROPERTIES
         if(OBS_PLATFORM STREQUAL "64bit")
-          VS_DEBUGGER_COMMAND "${OBS_DIRECTORY}/bin/${OBS_PLATFORM}/obs64.exe"
+          VS_DEBUGGER_COMMAND ${OBS_DIRECTORY}/bin/${OBS_PLATFORM}/obs64.exe
         else()
-          VS_DEBUGGER_COMMAND "${OBS_DIRECTORY}/bin/${OBS_PLATFORM}/obs32.exe"
+          VS_DEBUGGER_COMMAND ${OBS_DIRECTORY}/bin/${OBS_PLATFORM}/obs32.exe
         endif()
-        VS_DEBUGGER_WORKING_DIRECTORY "${OBS_DIRECTORY}/bin/${OBS_PLATFORM}")
+        VS_DEBUGGER_WORKING_DIRECTORY ${OBS_DIRECTORY}/bin/${OBS_PLATFORM})
   endif()
 
   if (OBS_DIRECTORY)
