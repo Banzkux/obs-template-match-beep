@@ -24,7 +24,7 @@ function Setup-Host {
     $script:PlatformSDK = $BuildSpec.platformConfig."windows-${script:Target}".platformSDK
 
     if ( ! ( ( $script:SkipAll ) -or ( $script:SkipDeps ) ) ) {
-        ('prebuilt', "qt${script:QtVersion}") | ForEach-Object {
+        ('prebuilt', "qt${script:QtVersion}", 'opencv') | ForEach-Object {
             $_Dependency = $_
             $_Version = $BuildSpec.dependencies."${_Dependency}".version
             $_BaseUrl = $BuildSpec.dependencies."${_Dependency}".baseUrl
@@ -56,6 +56,11 @@ function Setup-Host {
                     $_Uri = "${_BaseUrl}/${_Version}/${_Filename}"
                     $_Target = "plugin-deps-${_Version}-qt${script:QtVersion}-${script:Target}"
                 }
+                opencv {
+                    $_FileName = "opencv-${_Version}-vc14_vc15.exe"
+                    $_Uri = "${_BaseUrl}/${_FileName}/download"
+                    $_Target = "plugin-deps-${script:DepsVersion}-qt${script:QtVersion}-${script:Target}"
+                }
             }
 
             if ( ! ( Test-Path -Path $_Filename ) ) {
@@ -84,8 +89,23 @@ function Setup-Host {
                 Push-Location -Stack BuildTemp
                 Ensure-Location -Path $_Target
 
-                Expand-ArchiveExt -Path "../${_Filename}" -DestinationPath . -Force
 
+
+                # Move opencv files to correct location
+                if ($_Dependency -eq 'opencv') {
+                    Expand-ArchiveExt -Path "../${_Filename}" -DestinationPath . -Force -OpenCV
+                    #Move-Item -Path './opencv/build/*' -Destination "." -Force
+                    #Get-ChildItem -Path './opencv/build/*' -Recurse | Move-Item -Destination "."
+                    #Copy-Item -Path './opencv/build/*' -Destination "."
+                    & "robocopy" "./opencv/build" "." "/E"
+                    $exitCode = $LASTEXITCODE
+                    if ($exitCode -gt 3){
+                        throw "Robocopy exited with >3 error code ${exitCode}."
+                    }
+                }
+                else {
+                    Expand-ArchiveExt -Path "../${_Filename}" -DestinationPath . -Force
+                }
                 Pop-Location -Stack BuildTemp
             }
             Pop-Location -Stack BuildTemp

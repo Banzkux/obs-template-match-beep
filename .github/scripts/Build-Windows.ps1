@@ -63,7 +63,7 @@ function Build {
 
     Setup-Obs
 
-    Setup-OpenCV
+    # Setup-OpenCV
 
     # OBS Installation path for attaching debugger and copying binaries
     $ObsPath = ""
@@ -114,16 +114,14 @@ function Build {
 
     # Copy OpenCV binaries to release folder
     $Platform = ""
-    $Config = ""
-    if ($Configuration -eq "Debug") { $Config = "Debug" } else { $Config = "Release" }
     if (${script:Target} -eq "x64") {$Platform = "64bit"} else {$Platform = "32bit"}
 
-    Copy-Item -Path "${ProjectRoot}/../opencv/plugin_build_${script:Target}/bin/${Config}/*" `
-            -Include *.dll -Destination "${ProjectRoot}/release/obs-plugins/${Platform}/"
+    Copy-Item -Path "${ProjectRoot}/../obs-build-dependencies/${DepsPath}/x64/vc15/bin/opencv_world460.dll" `
+        -Destination "${ObsPath}/obs-plugins/${Platform}/"
     # Copies OpenCV binaries to OBS folder as well!
     if ($ObsPath -ne ""){
-        Copy-Item -Path "${ProjectRoot}/../opencv/plugin_build_${script:Target}/bin/${Config}/*" `
-        -Include *.dll -Destination "${ObsPath}/obs-plugins/${Platform}/"
+        Copy-Item -Path "${ProjectRoot}/../obs-build-dependencies/${DepsPath}/x64/vc15/bin/opencv_world460.dll" `
+        -Destination "${ObsPath}/obs-plugins/${Platform}/"
     }
 
     Pop-Location -Stack BuildTemp

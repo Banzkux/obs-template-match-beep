@@ -8,9 +8,16 @@
         },
         "opencv": {
             "version": "4.6.0",
-            "repository": "https://github.com/opencv/opencv.git",
+            "baseUrl": "https://sourceforge.net/projects/opencvlibrary/files/4.6.0/",
             "branch": "master",
-            "hash": "b0dc474160e389b9c9045da5db49d03ae17c6a6b"
+            "label": "OpenCV binaries",
+            "hashes": {
+                "macos-x86_64": "e4dc3e29d490c64e39aeaf61661635790232ba646656e6603dfe12786f36ab93",
+                "macos-arm64": "e4dc3e29d490c64e39aeaf61661635790232ba646656e6603dfe12786f36ab93",
+                "macos-universal": "e4dc3e29d490c64e39aeaf61661635790232ba646656e6603dfe12786f36ab93",
+                "windows-x64": "3FB046E14DC5B50719A86EA0395B5B1E3299E2343111EBD2E31828AA31D6D477",
+                "windows-x86": "3FB046E14DC5B50719A86EA0395B5B1E3299E2343111EBD2E31828AA31D6D477"
+            }
         },
         "prebuilt": {
             "version": "2022-08-02",

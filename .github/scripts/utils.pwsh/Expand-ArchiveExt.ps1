@@ -16,7 +16,8 @@ function Expand-ArchiveExt {
         [Parameter(Mandatory)]
         [string] $Path,
         [string] $DestinationPath = [System.IO.Path]::GetFileNameWithoutExtension($Path),
-        [switch] $Force
+        [switch] $Force,
+        [switch] $OpenCV
     )
 
     switch ( [System.IO.Path]::GetExtension($Path) ) {
@@ -34,7 +35,13 @@ function Expand-ArchiveExt {
         }
         { ( $_ -eq ".7z" ) -or ( $_ -eq ".exe" ) } {
             if ( Get-Command 7z ) {
-                Invoke-External 7z x -y $Path "-o${DestinationPath}"
+                if ($OpenCV) {
+                    Invoke-External 7z x -y $Path "opencv/build/*" "-o${DestinationPath}"
+                }
+                else {
+                    Invoke-External 7z x -y $Path "-o${DestinationPath}"
+                }
+
             } else {
                 throw "Extraction utility 7-zip not found. Please install 7-zip first."
             }
