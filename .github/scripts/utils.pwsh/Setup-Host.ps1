@@ -58,7 +58,7 @@ function Setup-Host {
                 }
                 opencv {
                     $_FileName = "opencv-${_Version}-vc14_vc15.exe"
-                    $_Uri = "${_BaseUrl}/${_FileName}/download"
+                    $_Uri = "${_BaseUrl}/${_Version}/${_FileName}"
                     $_Target = "plugin-deps-${script:DepsVersion}-qt${script:QtVersion}-${script:Target}"
                 }
             }

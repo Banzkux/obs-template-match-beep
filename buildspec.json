@@ -8,8 +8,7 @@
         },
         "opencv": {
             "version": "4.6.0",
-            "baseUrl": "https://sourceforge.net/projects/opencvlibrary/files/4.6.0/",
-            "branch": "master",
+            "baseUrl": "https://github.com/opencv/opencv/releases/download",
             "label": "OpenCV binaries",
             "hashes": {
                 "macos-x86_64": "e4dc3e29d490c64e39aeaf61661635790232ba646656e6603dfe12786f36ab93",
