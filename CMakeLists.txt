@@ -78,22 +78,13 @@ if(OS_WINDOWS)
   configure_file(cmake/bundle/windows/resource.rc.in ${CMAKE_BINARY_DIR}/${CMAKE_PROJECT_NAME}.rc)
   target_sources(${CMAKE_PROJECT_NAME} PRIVATE ${CMAKE_BINARY_DIR}/${CMAKE_PROJECT_NAME}.rc)
 
-  if(CMAKE_GENERATOR_PLATFORM STREQUAL "x64")
-    set(OBS_PLATFORM "64bit")
-  else()
-    set(OBS_PLATFORM "32bit")
-  endif()
-
   if(MSVC)
     target_compile_options(${CMAKE_PROJECT_NAME} PRIVATE /W4)
     set_target_properties(
-        ${CMAKE_PROJECT_NAME} PROPERTIES
-        if(OBS_PLATFORM STREQUAL "64bit")
-          VS_DEBUGGER_COMMAND ${OBS_DIRECTORY}"/bin/"${OBS_PLATFORM}"/obs64.exe"
-        else()
-          VS_DEBUGGER_COMMAND ${OBS_DIRECTORY}"/bin/"${OBS_PLATFORM}"/obs32.exe"
-        endif()
-        VS_DEBUGGER_WORKING_DIRECTORY ${OBS_DIRECTORY}"/bin/"${OBS_PLATFORM})
+      ${CMAKE_PROJECT_NAME} PROPERTIES
+      VS_DEBUGGER_COMMAND "${OBS_DIRECTORY}/bin/${_ARCH_SUFFIX}bit/obs${_ARCH_SUFFIX}.exe"
+      VS_DEBUGGER_WORKING_DIRECTORY "${OBS_DIRECTORY}/bin/${_ARCH_SUFFIX}bit"
+    )
   endif()
 
   if (OBS_DIRECTORY)
@@ -103,11 +94,11 @@ if(OS_WINDOWS)
       COMMAND ${CMAKE_COMMAND} -E
       copy
           $<TARGET_FILE:${CMAKE_PROJECT_NAME}>
-          ${OBS_DIRECTORY}/obs-plugins/${OBS_PLATFORM}/$<TARGET_FILE_NAME:${CMAKE_PROJECT_NAME}>
+          ${OBS_DIRECTORY}/obs-plugins/${_ARCH_SUFFIX}bit/$<TARGET_FILE_NAME:${CMAKE_PROJECT_NAME}>
       COMMAND ${CMAKE_COMMAND} -E
       copy
           ${CMAKE_BINARY_DIR}/${CMAKE_BUILD_TYPE}/${CMAKE_PROJECT_NAME}.pdb
-          ${OBS_DIRECTORY}/obs-plugins/${OBS_PLATFORM}/${CMAKE_PROJECT_NAME}.pdb
+          ${OBS_DIRECTORY}/obs-plugins/${_ARCH_SUFFIX}bit/${CMAKE_PROJECT_NAME}.pdb
     )
   endif()
   # --- End of section ---
