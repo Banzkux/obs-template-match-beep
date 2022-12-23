@@ -117,7 +117,7 @@ function Build {
     if (${script:Target} -eq "x64") {$Platform = "64bit"} else {$Platform = "32bit"}
 
     Copy-Item -Path "${ProjectRoot}/../obs-build-dependencies/${DepsPath}/x64/vc15/bin/opencv_world460.dll" `
-        -Destination "${ObsPath}/obs-plugins/${Platform}/"
+        -Destination "${ProjectRoot}/release/obs-plugins/${Platform}/"
     # Copies OpenCV binaries to OBS folder as well!
     if ($ObsPath -ne ""){
         Copy-Item -Path "${ProjectRoot}/../obs-build-dependencies/${DepsPath}/x64/vc15/bin/opencv_world460.dll" `
