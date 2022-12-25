@@ -118,6 +118,12 @@ elseif(OS_MACOS)
   set(MACOSX_PLUGIN_SHORT_VERSION_STRING "1")
 
   target_compile_options(${CMAKE_PROJECT_NAME} PRIVATE -Wall)
+  
+  find_library(AUDIO_UNIT AudioUnit)
+  if(NOT AUDIO_UNIT)
+    message(FATAL_ERROR "AudioUnit not found")
+  endif()
+  target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE ${AUDIO_UNIT})
   # --- End of section ---
 
   # --- Linux-specific build settings and tasks ---

@@ -19,7 +19,18 @@
 
 #include <memory>
 #include <obs-module.h>
+
+#ifdef __cplusplus
+#undef NO
+#undef YES
 #include <opencv2/opencv.hpp>
+#endif
+
+#ifdef __OBJC__
+#import <UIKit/UIKit.h>
+#import <Foundation/Foundation.h>
+#import <Availability.h>
+#endif
 
 namespace lvk {
 

@@ -16,15 +16,28 @@ You should have received a copy of the GNU General Public License along
 with this program. If not, see <https://www.gnu.org/licenses/>
 */
 
-#include <obs-module.h>
+
 // Remember to bundle with the opencv binaries!
+#ifdef __cplusplus
+#undef NO
+#undef YES
 #include <opencv2/opencv.hpp>
+#include "vendor/LiveVisionKit/FrameIngest.hpp"
+#endif
+
+#include <obs-module.h>
 #include <string>
 #include <chrono>
 #include <thread>
 #include <math.h>
-#include "vendor/LiveVisionKit/FrameIngest.hpp"
+
 #include "vendor/beep/beep.h"
+
+#ifdef __OBJC__
+#import <UIKit/UIKit.h>
+#import <Foundation/Foundation.h>
+#import <Availability.h>
+#endif
 
 #include "template-match-beep.generated.h"
 
