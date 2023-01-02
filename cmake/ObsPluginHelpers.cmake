@@ -188,14 +188,9 @@ if(OS_POSIX)
       "$<$<COMPILE_LANG_AND_ID:C,AppleClang,Clang>:-Wnull-conversion;-Wno-error=shorten-64-to-32;-fcolor-diagnostics>"
       "$<$<COMPILE_LANG_AND_ID:CXX,AppleClang,Clang>:-Wnull-conversion;-Wno-error=shorten-64-to-32;-fcolor-diagnostics>"
       "$<$<COMPILE_LANG_AND_ID:CXX,GNU>:-Wconversion-null>"
-      "$<$<CONFIG:DEBUG>:-DDEBUG=1;-D_DEBUG=1>"
-  )
+      "$<$<CONFIG:DEBUG>:-DDEBUG=1;-D_DEBUG=1>")
   if(OS_POSIX AND NOT OS_MACOS)
-    target_compile_options(
-      ${CMAKE_PROJECT_NAME}
-      PRIVATE
-        -lasound
-    )
+    target_compile_options(${CMAKE_PROJECT_NAME} PRIVATE -lasound)
   endif()
   # GCC 12.1.0 has a regression bug which trigger maybe-uninitialized warnings where there is not.
   # (https://gcc.gnu.org/bugzilla/show_bug.cgi?id=105562)
