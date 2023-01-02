@@ -55,6 +55,7 @@ OBS_MODULE_USE_DEFAULT_LOCALE(PLUGIN_NAME, "en-US")
 #define SETTING_DELAY_MS "delay_ms"
 #define SETTING_COOLDOWN_MS "cooldown_ms"
 #define SETTING_PATH "template_path"
+#define SETTING_DBUG_VIEW "debug_view"
 #define SETTING_XYGROUP "xygroup"
 #define SETTING_XYGROUP_X1 "xygroup_x1"
 #define SETTING_XYGROUP_X2 "xygroup_x2"
@@ -65,6 +66,7 @@ OBS_MODULE_USE_DEFAULT_LOCALE(PLUGIN_NAME, "en-US")
 #define TEXT_DELAY_MS obs_module_text("Timer")
 #define TEXT_COOLDOWN_MS obs_module_text("Cooldown timer")
 #define TEXT_PATH obs_module_text("Template image path")
+#define TEXT_DBUG_VIEW obs_module_text("Debug view")
 #define TEXT_XYGROUP obs_module_text("Region of interest")
 #define TEXT_XYGROUP_X1 obs_module_text("Top left X")
 #define TEXT_XYGROUP_X2 obs_module_text("Bottom right X")
@@ -81,6 +83,8 @@ struct template_match_beep_data {
 
 	std::thread thread;
 	bool thread_active;
+	// Check if we need to destroy the debug window
+	bool debug_view_active;
 
 	// LiveVisionKit, OBS Frame -> OpenCV frame
 	std::unique_ptr<lvk::FrameIngest> frame_ingest;
@@ -89,6 +93,7 @@ struct template_match_beep_data {
 	uint64_t timer;
 	uint64_t cooldown_timer;
 	const char *path;
+	bool debug_view;
 
 	cv::Mat template_image;
 
@@ -118,6 +123,8 @@ static void template_match_beep_filter_update(void *data, obs_data_t *settings)
 	const char *new_path =
 		(const char *)obs_data_get_string(settings, SETTING_PATH);
 
+	bool new_view = (bool)obs_data_get_bool(settings, SETTING_DBUG_VIEW);
+
 	filter->xygroup_x1 =
 		(int)obs_data_get_int(settings, SETTING_XYGROUP_X1);
 	filter->xygroup_y1 =
@@ -140,6 +147,13 @@ static void template_match_beep_filter_update(void *data, obs_data_t *settings)
 		filter->path = new_path;
 		filter->template_image = cv::imread(new_path, 0);
 	}
+	if (filter->debug_view != new_view) {
+		filter->debug_view = new_view;
+		if (!new_view && filter->debug_view_active) {
+			cv::destroyWindow(SETTING_DBUG_VIEW);
+			filter->debug_view_active = false;
+		}
+	}
 }
 
 void thread_loop(void *data);
@@ -156,6 +170,7 @@ static void *template_match_beep_filter_create(obs_data_t *settings,
 	filter->thread_active = true;
 	filter->thread = std::thread(thread_loop, (void *)filter);
 	filter->settings = settings;
+	filter->debug_view_active = false;
 	return filter;
 }
 
@@ -175,8 +190,8 @@ static obs_properties_t *template_match_beep_filter_properties(void *data)
 
 	obs_properties_t *props = obs_properties_create();
 
-	obs_property_t *p = obs_properties_add_int(props, SETTING_DELAY_MS,
-						   TEXT_DELAY_MS, 100, INT_MAX, 1);
+	obs_property_t *p = obs_properties_add_int(
+		props, SETTING_DELAY_MS, TEXT_DELAY_MS, 100, INT_MAX, 1);
 	obs_property_int_set_suffix(p, " ms");
 
 	obs_property_t *c = obs_properties_add_int(
@@ -186,6 +201,8 @@ static obs_properties_t *template_match_beep_filter_properties(void *data)
 	// Template Image path
 	obs_properties_add_path(props, SETTING_PATH, TEXT_PATH, OBS_PATH_FILE,
 				"*.png", NULL);
+
+	obs_properties_add_bool(props, SETTING_DBUG_VIEW, TEXT_DBUG_VIEW);
 
 	// Region of interest setting group
 	obs_properties_t *xygroup = obs_properties_create();
@@ -259,14 +276,16 @@ void thread_loop(void *data)
 	struct template_match_beep_data *filter =
 		(template_match_beep_data *)data;
 
-	obs_source_frame *frame = nullptr;
+	uint64_t frame_ts = 0;
 
 	while (filter->thread_active) {
-		if (frame != filter->current_frame &&
+		if (filter->current_frame != nullptr &&
+		    frame_ts != filter->current_frame->timestamp &&
 		    !filter->template_image.empty() && filter->frame_ingest) {
-			frame = filter->current_frame;
+			frame_ts = filter->current_frame->timestamp;
 			cv::UMat umatroi, umat, umat2, umat3;
-			filter->frame_ingest->upload(frame, umat);
+			filter->frame_ingest->upload(filter->current_frame,
+						     umat);
 			if (!filter->roi.empty() && !filter->auto_roi &&
 			    (filter->roi.width >= filter->template_image.cols &&
 			     filter->roi.height >=
@@ -344,13 +363,13 @@ void thread_loop(void *data)
 				// Detection beep
 				// NOTE: the beep is synchronous!
 				beep(880, 100);
-				preciseSleep((filter->timer - 100) * MSEC_TO_SEC);
+				preciseSleep((filter->timer - 100) *
+					     MSEC_TO_SEC);
 				// Beep after timer
 				beep(440, 100);
 				// Cooldown time until next template match
 				preciseSleep((filter->cooldown_timer - 100) *
 					     MSEC_TO_SEC);
-					     
 			}
 		} else {
 			// chill for a bit
@@ -373,9 +392,12 @@ template_match_beep_filter_video(void *data, struct obs_source_frame *frame)
 	    filter->frame_ingest->format() != frame->format)
 		filter->frame_ingest = lvk::FrameIngest::Select(frame->format);
 
-	// Add property for debug or somehting
-	if (!filter->current_cv_frame.empty())
-		cv::imshow("TEST", filter->current_cv_frame);
+	// Debug view
+	if (!filter->current_cv_frame.empty() && filter->debug_view) {
+		cv::imshow(SETTING_DBUG_VIEW, filter->current_cv_frame);
+		if (!filter->debug_view_active)
+			filter->debug_view_active = true;
+	}
 
 	return frame;
 }
