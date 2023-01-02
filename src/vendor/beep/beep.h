@@ -77,7 +77,7 @@ static OSStatus tone_cb(void *inRefCon,
 			UInt32 inNumberFrames, AudioBufferList *ioData)
 {
 	unsigned int frame;
-	unsigned char *buf = (unsigned char*)ioData->mBuffers[0].mData;
+	unsigned char *buf = (unsigned char *)ioData->mBuffers[0].mData;
 	unsigned long i = 0;
 
 	for (i = 0; i < inNumberFrames; i++) {
@@ -93,11 +93,11 @@ static OSStatus tone_cb(void *inRefCon,
 			dispatch_semaphore_signal(stopped);
 		}
 	}
-    UNUSED_PARAMETER(inRefCon);
-    UNUSED_PARAMETER(ioActionFlags);
-    UNUSED_PARAMETER(inTimeStamp);
-    UNUSED_PARAMETER(inBusNumber);
-    UNUSED_PARAMETER(frame);
+	UNUSED_PARAMETER(inRefCon);
+	UNUSED_PARAMETER(ioActionFlags);
+	UNUSED_PARAMETER(inTimeStamp);
+	UNUSED_PARAMETER(inBusNumber);
+	UNUSED_PARAMETER(frame);
 	return 0;
 }
 

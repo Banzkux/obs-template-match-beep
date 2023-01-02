@@ -54,7 +54,7 @@ constexpr auto MAX_TEXTURE_SIZE = 8192;
 
 std::unique_ptr<FrameIngest> FrameIngest::Select(video_format format)
 {
-    UNUSED_PARAMETER(MAX_TEXTURE_SIZE);
+	UNUSED_PARAMETER(MAX_TEXTURE_SIZE);
 	switch (format) {
 	// Planar 4xx formats
 	case video_format::VIDEO_FORMAT_YUVA:
