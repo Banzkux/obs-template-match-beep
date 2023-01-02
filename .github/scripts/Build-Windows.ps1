@@ -116,12 +116,17 @@ function Build {
     $Platform = ""
     if (${script:Target} -eq "x64") {$Platform = "64bit"} else {$Platform = "32bit"}
 
+    if (!(Test-Path -PathType Container "${ProjectRoot}/release/bin/${Platform}/"))
+    {
+        New-Item -ItemType Directory -Path "${ProjectRoot}/release/bin/"
+        New-Item -ItemType Directory -Path "${ProjectRoot}/release/bin/${Platform}/"
+    }
     Copy-Item -Path "${ProjectRoot}/../obs-build-dependencies/${DepsPath}/x64/vc15/bin/opencv_world460.dll" `
-        -Destination "${ProjectRoot}/release/obs-plugins/${Platform}/"
+        -Destination "${ProjectRoot}/release/bin/${Platform}/"
     # Copies OpenCV binaries to OBS folder as well!
     if ($ObsPath -ne ""){
         Copy-Item -Path "${ProjectRoot}/../obs-build-dependencies/${DepsPath}/x64/vc15/bin/opencv_world460.dll" `
-        -Destination "${ObsPath}/obs-plugins/${Platform}/"
+        -Destination "${ObsPath}/bin/${Platform}/"
     }
 
     Pop-Location -Stack BuildTemp
