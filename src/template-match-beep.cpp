@@ -55,7 +55,6 @@ OBS_MODULE_USE_DEFAULT_LOCALE(PLUGIN_NAME, "en-US")
 #define SETTING_DELAY_MS "delay_ms"
 #define SETTING_COOLDOWN_MS "cooldown_ms"
 #define SETTING_PATH "template_path"
-#define SETTING_STATUS "status"
 #define SETTING_XYGROUP "xygroup"
 #define SETTING_XYGROUP_X1 "xygroup_x1"
 #define SETTING_XYGROUP_X2 "xygroup_x2"
@@ -66,7 +65,6 @@ OBS_MODULE_USE_DEFAULT_LOCALE(PLUGIN_NAME, "en-US")
 #define TEXT_DELAY_MS obs_module_text("Timer")
 #define TEXT_COOLDOWN_MS obs_module_text("Cooldown timer")
 #define TEXT_PATH obs_module_text("Template image path")
-#define TEXT_STATUS std::string("Status: ")
 #define TEXT_XYGROUP obs_module_text("Region of interest")
 #define TEXT_XYGROUP_X1 obs_module_text("Top left X")
 #define TEXT_XYGROUP_X2 obs_module_text("Bottom right X")
@@ -76,32 +74,28 @@ OBS_MODULE_USE_DEFAULT_LOCALE(PLUGIN_NAME, "en-US")
 struct template_match_beep_data {
 	obs_source_t *context;
 
-	obs_properties_t *props;
-	obs_properties_t *group;
 	obs_data_t *settings;
 
-	/* contains struct obs_source_frame* */
 	obs_source_frame *current_frame;
+	cv::UMat current_cv_frame;
 
-	// Rest of the needed variables here (I guess)
-	uint64_t last_video_ts;
+	std::thread thread;
+	bool thread_active;
+
+	// LiveVisionKit, OBS Frame -> OpenCV frame
+	std::unique_ptr<lvk::FrameIngest> frame_ingest;
+
+	// Plugin settings
 	uint64_t timer;
 	uint64_t cooldown_timer;
 	const char *path;
-	std::string state;
-	bool timer_active;
-	uint64_t timer_video_ts;
-	std::thread thread;
-	bool thread_active;
+
 	cv::Mat template_image;
-	cv::UMat current_cv_frame;
 
 	cv::Rect roi;
 	bool auto_roi;
 	int xygroup_x1, xygroup_y1;
 	int xygroup_x2, xygroup_y2;
-
-	std::unique_ptr<lvk::FrameIngest> frame_ingest;
 };
 
 static const char *template_match_beep_filter_name(void *unused)
@@ -146,8 +140,6 @@ static void template_match_beep_filter_update(void *data, obs_data_t *settings)
 		filter->path = new_path;
 		filter->template_image = cv::imread(new_path, 0);
 	}
-
-	blog(LOG_INFO, "asd");
 }
 
 void thread_loop(void *data);
@@ -161,9 +153,6 @@ static void *template_match_beep_filter_create(obs_data_t *settings,
 	filter->context = context;
 	template_match_beep_filter_update(filter, settings);
 	filter->current_frame = nullptr;
-	std::string abc(TEXT_STATUS + "Created");
-	filter->state = abc;
-	filter->timer_video_ts = 0;
 	filter->thread_active = true;
 	filter->thread = std::thread(thread_loop, (void *)filter);
 	filter->settings = settings;
@@ -179,42 +168,6 @@ static void template_match_beep_filter_destroy(void *data)
 	bfree(data);
 }
 
-// calibrate button was clicked
-bool template_match_beep_calibrate(obs_properties_t *props, obs_property *,
-				   void *data)
-{
-	struct template_match_beep_data *filter =
-		(template_match_beep_data *)data;
-
-	// Do calibration
-	filter->state = TEXT_STATUS + "Calibration";
-	obs_property_set_description(obs_properties_get(props, SETTING_STATUS),
-				     filter->state.c_str());
-	// Check if the filter is active
-	if (obs_source_enabled(filter->context))
-		blog(LOG_INFO, "calibrate pressed");
-
-	return true;
-}
-
-// reset calibration button was clicked
-bool template_match_beep_reset_calibration(obs_properties_t *props,
-					   obs_property *, void *data)
-{
-	struct template_match_beep_data *filter =
-		(template_match_beep_data *)data;
-
-	// Reset calibration
-	filter->state = TEXT_STATUS + "Reset calibration";
-	obs_property_set_description(obs_properties_get(props, SETTING_STATUS),
-				     filter->state.c_str());
-	// Check if the filter is active
-	if (obs_source_enabled(filter->context))
-		blog(LOG_INFO, "reset pressed");
-
-	return true;
-}
-
 static obs_properties_t *template_match_beep_filter_properties(void *data)
 {
 	struct template_match_beep_data *filter =
@@ -222,47 +175,41 @@ static obs_properties_t *template_match_beep_filter_properties(void *data)
 
 	obs_properties_t *props = obs_properties_create();
 
-	obs_properties_add_text(props, SETTING_STATUS, filter->state.c_str(),
-				OBS_TEXT_INFO);
-
 	obs_property_t *p = obs_properties_add_int(props, SETTING_DELAY_MS,
-						   TEXT_DELAY_MS, 0, 20000, 1);
+						   TEXT_DELAY_MS, 100, INT_MAX, 1);
 	obs_property_int_set_suffix(p, " ms");
 
 	obs_property_t *c = obs_properties_add_int(
-		props, SETTING_COOLDOWN_MS, TEXT_COOLDOWN_MS, 0, 20000, 1);
+		props, SETTING_COOLDOWN_MS, TEXT_COOLDOWN_MS, 100, INT_MAX, 1);
 	obs_property_int_set_suffix(c, " ms");
 
-	// obs_properties_add_path
-	// obs_properties_add_button
-
+	// Template Image path
 	obs_properties_add_path(props, SETTING_PATH, TEXT_PATH, OBS_PATH_FILE,
 				"*.png", NULL);
 
-	obs_properties_add_button(props, "calibrate", "Calibrate",
-				  template_match_beep_calibrate);
-	obs_properties_add_button(props, "reset_calibration",
-				  "Reset Calibration",
-				  template_match_beep_reset_calibration);
-
+	// Region of interest setting group
 	obs_properties_t *xygroup = obs_properties_create();
 	obs_properties_add_group(props, SETTING_XYGROUP, TEXT_XYGROUP,
 				 OBS_GROUP_CHECKABLE, xygroup);
 
 	obs_properties_add_bool(xygroup, SETTING_AUTO_ROI, TEXT_AUTO_ROI);
-
+	// Default limits for ROI
+	int width = 640;
+	int height = 480;
+	// Add limits from frame if it exist
+	if (filter->current_frame) {
+		width = filter->current_frame->width;
+		height = filter->current_frame->height;
+	}
 	obs_properties_add_int(xygroup, SETTING_XYGROUP_X1, TEXT_XYGROUP_X1, 0,
-			       (int)filter->current_frame->width, 1);
+			       width, 1);
 	obs_properties_add_int(xygroup, SETTING_XYGROUP_Y1, TEXT_XYGROUP_Y1, 0,
-			       (int)filter->current_frame->height, 1);
+			       height, 1);
 
 	obs_properties_add_int(xygroup, SETTING_XYGROUP_X2, TEXT_XYGROUP_X2, 0,
-			       (int)filter->current_frame->width, 1);
+			       width, 1);
 	obs_properties_add_int(xygroup, SETTING_XYGROUP_Y2, TEXT_XYGROUP_Y2, 0,
-			       (int)filter->current_frame->height, 1);
-
-	filter->props = props;
-	filter->group = xygroup;
+			       height, 1);
 
 	return props;
 }
@@ -397,12 +344,13 @@ void thread_loop(void *data)
 				// Detection beep
 				// NOTE: the beep is synchronous!
 				beep(880, 100);
-				preciseSleep(filter->timer * MSEC_TO_SEC);
+				preciseSleep((filter->timer - 100) * MSEC_TO_SEC);
 				// Beep after timer
 				beep(440, 100);
 				// Cooldown time until next template match
-				preciseSleep(filter->cooldown_timer *
+				preciseSleep((filter->cooldown_timer - 100) *
 					     MSEC_TO_SEC);
+					     
 			}
 		} else {
 			// chill for a bit
