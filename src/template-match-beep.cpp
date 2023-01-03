@@ -25,6 +25,8 @@ with this program. If not, see <https://www.gnu.org/licenses/>
 #endif
 
 #include <obs-module.h>
+#include <QFileDialog>
+#include <QStandardPaths>
 #include <string>
 #include <chrono>
 #include <thread>
@@ -55,6 +57,7 @@ OBS_MODULE_USE_DEFAULT_LOCALE(PLUGIN_NAME, "en-US")
 #define SETTING_DELAY_MS "delay_ms"
 #define SETTING_COOLDOWN_MS "cooldown_ms"
 #define SETTING_PATH "template_path"
+#define SETTING_SAVE_FRAME "save_frame"
 #define SETTING_DBUG_VIEW "debug_view"
 #define SETTING_XYGROUP "xygroup"
 #define SETTING_XYGROUP_X1 "xygroup_x1"
@@ -66,6 +69,7 @@ OBS_MODULE_USE_DEFAULT_LOCALE(PLUGIN_NAME, "en-US")
 #define TEXT_DELAY_MS obs_module_text("Timer")
 #define TEXT_COOLDOWN_MS obs_module_text("Cooldown timer")
 #define TEXT_PATH obs_module_text("Template image path")
+#define TEXT_SAVE_FRAME obs_module_text("Save frame")
 #define TEXT_DBUG_VIEW obs_module_text("Debug view")
 #define TEXT_XYGROUP obs_module_text("Region of interest")
 #define TEXT_XYGROUP_X1 obs_module_text("Top left X")
@@ -183,6 +187,31 @@ static void template_match_beep_filter_destroy(void *data)
 	bfree(data);
 }
 
+bool template_match_beep_save_frame(obs_properties_t *props,
+				    obs_property_t *property, void *data)
+{
+	struct template_match_beep_data *filter =
+		(template_match_beep_data *)data;
+
+	cv::UMat umat, umat2;
+	filter->frame_ingest->upload(filter->current_frame, umat);
+	// Changing color format, this may become issue
+	cv::cvtColor(umat, umat2, cv::COLOR_YUV2BGR, 4);
+	// Save image dialog
+	QString filename = QFileDialog::getSaveFileName(
+		nullptr, "Save frame",
+		QStandardPaths::writableLocation(
+			QStandardPaths::PicturesLocation),
+		"*.png");
+
+	if (!filename.isNull())
+		cv::imwrite(filename.toStdString(), umat2);
+
+	UNUSED_PARAMETER(props);
+	UNUSED_PARAMETER(property);
+	return true;
+}
+
 static obs_properties_t *template_match_beep_filter_properties(void *data)
 {
 	struct template_match_beep_data *filter =
@@ -201,6 +230,9 @@ static obs_properties_t *template_match_beep_filter_properties(void *data)
 	// Template Image path
 	obs_properties_add_path(props, SETTING_PATH, TEXT_PATH, OBS_PATH_FILE,
 				"*.png", NULL);
+
+	obs_properties_add_button(props, SETTING_SAVE_FRAME, TEXT_SAVE_FRAME,
+				  template_match_beep_save_frame);
 
 	obs_properties_add_bool(props, SETTING_DBUG_VIEW, TEXT_DBUG_VIEW);
 

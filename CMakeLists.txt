@@ -41,7 +41,6 @@ target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE OBS::obs-frontend-api)
 #]]
 
 # Uncomment those lines if you want to use Qt in your plugin
-#[[
 find_qt(COMPONENTS Widgets Core)
 target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE Qt::Core Qt::Widgets)
 set_target_properties(
@@ -49,7 +48,6 @@ set_target_properties(
   PROPERTIES AUTOMOC ON
              AUTOUIC ON
              AUTORCC ON)
-#]]
 
 if(OS_WINDOWS)
   find_package(OpenCV REQUIRED world)
