@@ -129,20 +129,29 @@ static void template_match_beep_filter_update(void *data, obs_data_t *settings)
 
 	bool new_view = (bool)obs_data_get_bool(settings, SETTING_DBUG_VIEW);
 
-	filter->xygroup_x1 =
-		(int)obs_data_get_int(settings, SETTING_XYGROUP_X1);
-	filter->xygroup_y1 =
-		(int)obs_data_get_int(settings, SETTING_XYGROUP_Y1);
-	filter->xygroup_x2 =
-		(int)obs_data_get_int(settings, SETTING_XYGROUP_X2);
-	filter->xygroup_y2 =
-		(int)obs_data_get_int(settings, SETTING_XYGROUP_Y2);
+	// ROI group
+	if (obs_data_get_bool(settings, SETTING_XYGROUP)) {
+		filter->xygroup_x1 =
+			(int)obs_data_get_int(settings, SETTING_XYGROUP_X1);
+		filter->xygroup_y1 =
+			(int)obs_data_get_int(settings, SETTING_XYGROUP_Y1);
+		filter->xygroup_x2 =
+			(int)obs_data_get_int(settings, SETTING_XYGROUP_X2);
+		filter->xygroup_y2 =
+			(int)obs_data_get_int(settings, SETTING_XYGROUP_Y2);
+		filter->auto_roi =
+			obs_data_get_bool(settings, SETTING_AUTO_ROI);
+	} else {
+		filter->xygroup_x1 = 0;
+		filter->xygroup_y1 = 0;
+		filter->xygroup_x2 = 0;
+		filter->xygroup_y2 = 0;
+		filter->auto_roi = false;
+	}
 
 	filter->roi =
 		cv::Rect(cv::Point(filter->xygroup_x1, filter->xygroup_y1),
 			 cv::Point(filter->xygroup_x2, filter->xygroup_y2));
-
-	filter->auto_roi = obs_data_get_bool(settings, SETTING_AUTO_ROI);
 
 	filter->timer = new_timer;
 	filter->cooldown_timer = new_cooldown;
