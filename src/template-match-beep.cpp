@@ -79,6 +79,7 @@ OBS_MODULE_USE_DEFAULT_LOCALE(PLUGIN_NAME, "en-US")
 
 struct template_match_beep_data {
 	obs_source_t *context;
+	obs_source_t *source;
 
 	obs_data_t *settings;
 
@@ -182,6 +183,9 @@ static void *template_match_beep_filter_create(obs_data_t *settings,
 	filter->current_frame = nullptr;
 	filter->thread_active = true;
 	filter->thread = std::thread(thread_loop, (void *)filter);
+
+	filter->source = nullptr;
+
 	filter->settings = settings;
 	filter->debug_view_active = false;
 	return filter;
@@ -320,6 +324,10 @@ void thread_loop(void *data)
 	uint64_t frame_ts = 0;
 
 	while (filter->thread_active) {
+		// Fixes crashes on media source when enabling/disabling the source
+		if (!obs_source_active(filter->source))
+			filter->current_frame = nullptr;
+
 		if (filter->current_frame != nullptr &&
 		    frame_ts != filter->current_frame->timestamp &&
 		    !filter->template_image.empty() && filter->frame_ingest) {
@@ -426,6 +434,9 @@ template_match_beep_filter_video(void *data, struct obs_source_frame *frame)
 {
 	struct template_match_beep_data *filter =
 		(template_match_beep_data *)data;
+
+	if (filter->source == nullptr)
+		filter->source = obs_filter_get_parent(filter->context);
 
 	filter->current_frame = frame;
 
