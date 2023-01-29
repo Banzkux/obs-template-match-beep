@@ -28,7 +28,7 @@ set(ABEEP_H src/vendor/abeep/abeep.h src/vendor/abeep/sintable.h)
 target_sources(
   ${CMAKE_PROJECT_NAME}
   PRIVATE src/template-match-beep.generated.h src/vendor/LiveVisionKit/FrameIngest.hpp
-          src/vendor/beep/beep.h ${ABEEP_H})
+          src/vendor/beep/beep.h ${ABEEP_H} src/CustomBeepSettings.h)
 
 # Import libobs as main plugin dependency
 find_package(libobs REQUIRED)
