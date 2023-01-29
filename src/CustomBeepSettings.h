@@ -150,13 +150,13 @@ public:
 			QApplication::translate("beep_settings", "Beep Settings"));
 		mainLayout = new QVBoxLayout(window);
 
-		scrollarea = new QScrollArea();
+		scrollarea = new QScrollArea(window);
 		mainLayout->addWidget(scrollarea);
 		scrollarea->setHorizontalScrollBarPolicy(
 			Qt::ScrollBarAlwaysOff);
 		scrollarea->setWidgetResizable(true);
 
-		techArea = new QWidget();
+		techArea = new QWidget(window);
 
 		techArea->setObjectName("techarea");
 		techArea->setSizePolicy(QSizePolicy::MinimumExpanding,
@@ -166,7 +166,7 @@ public:
 		techArea->setLayout(list);
 		scrollarea->setWidget(techArea);
 
-		button = new QPushButton("Add event");
+		button = new QPushButton("Add event", window);
 		connect(button, &QPushButton::clicked, this,
 			&CustomBeepSettings::addNewEvent);
 		mainLayout->addWidget(button);
@@ -199,10 +199,7 @@ public:
 private:
 	void addNewEvent() { 
 		blog(LOG_INFO, "TEST EVENT");
-	    QComboBox *q = new QComboBox();
-		q->addItem("Beep", (int)EventType::Beep);
-	    q->addItem("Wait", (int)EventType::Wait);
-	    list->addWidget(new ArrayItemWidget());
+	    list->addWidget(new ArrayItemWidget(window));
 	}
 
     obs_data_t* CreateArrayItem(EventType type) { 
