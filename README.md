@@ -1,5 +1,6 @@
 # OBS Template Match Beep
 ## Introduction
+**OBS Studio 28 or higher required.**
 
 This plugin is an OBS filter which does the following:
 - Template matches each frame
