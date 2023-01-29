@@ -37,16 +37,20 @@ protected:
 	bool eventFilter(QObject *o, QEvent *e) override;
 };
 
-enum class EventType { None, Beep, Wait };
+enum class EventType { Beep, Wait };
 class CustomBeepSettings;
+
 class ArrayItemWidget : public QWidget {
 	Q_OBJECT
 public:
+	ArrayItemWidget(obs_data_t *item, CustomBeepSettings *settings, QWidget *parent = nullptr);
 	ArrayItemWidget(CustomBeepSettings *settings, QWidget *parent = nullptr);
 	~ArrayItemWidget();
 
 private slots:
-	void currentIndexChangedC(int index);
+	void currentTypeChanged(int index);
+	void currentLengthChanged(int value);
+	void currentFrequencyChanged(int value);
 	void removeClicked();
 
 private:
@@ -71,12 +75,16 @@ public:
 
 	void DeleteArrayItem(ArrayItemWidget *widget);
 
+	void ChangedArrayItem(ArrayItemWidget *widget, const char *name, int value);
+
 private:
 	void addNewEvent();
 
     obs_data_t *CreateArrayItem(EventType type);
 
 	void SetArrayItemType(obs_data_t *item, EventType type);
+
+	obs_data_array_t *m_Settings;
 
 	QDialog *window;
 	QVBoxLayout *mainLayout;
