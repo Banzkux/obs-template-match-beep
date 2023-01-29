@@ -237,7 +237,7 @@ bool template_match_beep_settings(obs_properties_t *props,
 	struct template_match_beep_data *filter =
 		(template_match_beep_data *)data;
 	
-	filter->custom_settings->CreateSettingsWindow();
+	filter->custom_settings->ShowSettingsWindow();
 
 	UNUSED_PARAMETER(props);
 	UNUSED_PARAMETER(property);

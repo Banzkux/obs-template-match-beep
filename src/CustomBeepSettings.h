@@ -76,8 +76,10 @@ public:
 	~CustomBeepSettings();
 
     void CreateOBSSettings(obs_data_t *settings);
+	void LoadSettings();
 
 	void CreateSettingsWindow();
+    void ShowSettingsWindow();
 
 	void DeleteArrayItem(ArrayItemWidget *widget);
 

@@ -107,7 +107,39 @@ void ArrayItemWidget::removeClicked()
 	delete this;
 }
 
-CustomBeepSettings::CustomBeepSettings(QObject *parent) : QObject(parent), m_Settings(nullptr)
+CustomBeepSettings::CustomBeepSettings(QObject *parent)
+	: QObject(parent),
+	  m_Settings(nullptr),
+	  button(nullptr),
+	  list(nullptr),
+	  mainLayout(nullptr),
+	  scrollarea(nullptr),
+	  techArea(nullptr),
+	  window(nullptr)
+{
+	
+}
+
+CustomBeepSettings::~CustomBeepSettings() {}
+
+void CustomBeepSettings::CreateOBSSettings(obs_data_t *settings)
+{
+	m_Settings = obs_data_get_array(settings, SETTING_EVENT_ARRAY);
+	if (m_Settings == nullptr) {
+		m_Settings = obs_data_array_create();
+		obs_data_set_array(settings, SETTING_EVENT_ARRAY, m_Settings);
+	}
+}
+
+void CustomBeepSettings::LoadSettings() {
+	// Create UI from loaded settings
+	for (int i = 0; i < obs_data_array_count(m_Settings); i++) {
+		obs_data_t *item = obs_data_array_item(m_Settings, i);
+		list->addWidget(new ArrayItemWidget(item, this, window));
+	}
+}
+
+void CustomBeepSettings::CreateSettingsWindow()
 {
 	window = new QDialog();
 	window->resize(420, 496);
@@ -134,29 +166,17 @@ CustomBeepSettings::CustomBeepSettings(QObject *parent) : QObject(parent), m_Set
 	button = new QPushButton("Add event", window);
 	connect(button, &QPushButton::clicked, this, &CustomBeepSettings::addNewEvent);
 	mainLayout->addWidget(button);
+
+	LoadSettings();
 }
 
-CustomBeepSettings::~CustomBeepSettings() {}
+void CustomBeepSettings::ShowSettingsWindow() {
+	CreateSettingsWindow();
 
-void CustomBeepSettings::CreateOBSSettings(obs_data_t *settings)
-{
-	m_Settings = obs_data_get_array(settings, SETTING_EVENT_ARRAY);
-	if (m_Settings == nullptr) {
-		m_Settings = obs_data_array_create();
-		obs_data_set_array(settings, SETTING_EVENT_ARRAY, m_Settings);
-	} else {
-		// Create UI from loaded settings
-		for (int i = 0; i < obs_data_array_count(m_Settings); i++) {
-			obs_data_t *item = obs_data_array_item(m_Settings, i);
-			list->addWidget(new ArrayItemWidget(item, this, window));
-		}
-	}
-}
-
-void CustomBeepSettings::CreateSettingsWindow()
-{
 	window->show();
 	window->exec();
+
+	delete window;
 }
 
 void CustomBeepSettings::DeleteArrayItem(ArrayItemWidget *widget)
