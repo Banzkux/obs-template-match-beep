@@ -16,7 +16,8 @@ bool MouseWheelWidgetAdjustmentGuard::eventFilter(QObject *o, QEvent *e)
 	return QObject::eventFilter(o, e);
 }
 
-ArrayItemWidget::ArrayItemWidget(QWidget *parent) : QWidget(parent)
+ArrayItemWidget::ArrayItemWidget(CustomBeepSettings *settings, QWidget *parent)
+	: QWidget(parent), settings(settings)
 {
 	layout = new QHBoxLayout(this);
 
@@ -76,6 +77,8 @@ void ArrayItemWidget::currentIndexChangedC(int index)
 void ArrayItemWidget::removeClicked()
 {
 	blog(LOG_INFO, "REMOVE CLICKED!");
+	settings->DeleteArrayItem(this);
+	delete this;
 }
 
 CustomBeepSettings::CustomBeepSettings(QObject *parent) : QObject(parent)
@@ -118,6 +121,7 @@ void CustomBeepSettings::CreateOBSSettings(obs_data_t *settings)
 	blog(LOG_INFO, "Array count: %i", obs_data_array_count(dataarray));
 	obs_data_t *arrayitem = obs_data_create();
 	obs_data_array_push_back(dataarray, arrayitem);
+	obs_data_array_erase(dataarray, 0);
 	blog(LOG_INFO, "Array count: %i", obs_data_array_count(dataarray));
 }
 
@@ -128,10 +132,15 @@ void CustomBeepSettings::CreateSettingsWindow()
 	window->exec();
 }
 
+void CustomBeepSettings::DeleteArrayItem(ArrayItemWidget *widget)
+{
+	blog(LOG_INFO, "Deleted item at index: %i", list->indexOf(widget));
+}
+
 void CustomBeepSettings::addNewEvent()
 {
-	blog(LOG_INFO, "TEST EVENT");
-	list->addWidget(new ArrayItemWidget(window));
+	blog(LOG_INFO, "TEST EVENT, count: %i", list->count());
+	list->addWidget(new ArrayItemWidget(this, window));
 }
 
 obs_data_t *CustomBeepSettings::CreateArrayItem(EventType type)

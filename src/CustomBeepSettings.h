@@ -38,11 +38,11 @@ protected:
 };
 
 enum class EventType { None, Beep, Wait };
-
+class CustomBeepSettings;
 class ArrayItemWidget : public QWidget {
 	Q_OBJECT
 public:
-	ArrayItemWidget(QWidget *parent = nullptr);
+	ArrayItemWidget(CustomBeepSettings *settings, QWidget *parent = nullptr);
 	~ArrayItemWidget();
 
 private slots:
@@ -50,6 +50,8 @@ private slots:
 	void removeClicked();
 
 private:
+	CustomBeepSettings *settings;
+
 	QHBoxLayout *layout;
 	QComboBox *type;
 	QSpinBox *length;
@@ -66,6 +68,8 @@ public:
     void CreateOBSSettings(obs_data_t *settings);
 
 	void CreateSettingsWindow();
+
+	void DeleteArrayItem(ArrayItemWidget *widget);
 
 private:
 	void addNewEvent();
