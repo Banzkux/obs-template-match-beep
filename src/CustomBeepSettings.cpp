@@ -30,6 +30,8 @@ ArrayItemWidget::ArrayItemWidget(CustomBeepSettings *settings, QWidget *parent)
 	: QWidget(parent), settings(settings)
 {
 	layout = new QHBoxLayout(this);
+	QMargins margins(0, 0, 0, 0);
+	layout->setContentsMargins(margins);
 
 	type = new QComboBox(this);
 
@@ -117,12 +119,14 @@ CustomBeepSettings::CustomBeepSettings(QObject *parent) : QObject(parent), m_Set
 	mainLayout->addWidget(scrollarea);
 	scrollarea->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
 	scrollarea->setWidgetResizable(true);
+	scrollarea->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
 
 	techArea = new QWidget(window);
 
 	techArea->setObjectName("techarea");
 	techArea->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::MinimumExpanding);
 	list = new QVBoxLayout(techArea);
+	list->setAlignment(Qt::AlignTop);
 
 	techArea->setLayout(list);
 	scrollarea->setWidget(techArea);
