@@ -82,7 +82,6 @@ ArrayItemWidget::~ArrayItemWidget()
 
 void ArrayItemWidget::currentTypeChanged(int index)
 {
-	blog(LOG_INFO, "HEYY %i", index);
 	settings->ChangedArrayItem(this, SETTING_EVENT_TYPE, index);
 	if (index == (int)EventType::Beep) {
 		frequency->setVisible(true);
@@ -102,7 +101,6 @@ void ArrayItemWidget::currentFrequencyChanged(int value)
 
 void ArrayItemWidget::removeClicked()
 {
-	blog(LOG_INFO, "REMOVE CLICKED!");
 	settings->DeleteArrayItem(this);
 	delete this;
 }
@@ -140,7 +138,6 @@ void CustomBeepSettings::CreateOBSSettings(obs_data_t *settings)
 {
 	m_Settings = obs_data_get_array(settings, SETTING_EVENT_ARRAY);
 	if (m_Settings == nullptr) {
-		blog(LOG_INFO, "Array doesn't exist!");
 		m_Settings = obs_data_array_create();
 		obs_data_set_array(settings, SETTING_EVENT_ARRAY, m_Settings);
 	} else {
@@ -155,13 +152,11 @@ void CustomBeepSettings::CreateOBSSettings(obs_data_t *settings)
 void CustomBeepSettings::CreateSettingsWindow()
 {
 	window->show();
-	blog(LOG_INFO, "%ix%i", window->size().width(), window->size().height());
 	window->exec();
 }
 
 void CustomBeepSettings::DeleteArrayItem(ArrayItemWidget *widget)
 {
-	blog(LOG_INFO, "Deleted item at index: %i", list->indexOf(widget));
 	obs_data_array_erase(m_Settings, list->indexOf(widget));
 }
 
@@ -188,7 +183,6 @@ std::vector<Event> CustomBeepSettings::GetEvents() {
 
 void CustomBeepSettings::addNewEvent()
 {
-	blog(LOG_INFO, "TEST EVENT, count: %i", list->count());
 	obs_data_array_push_back(m_Settings, CreateArrayItem(EventType::Beep));
 	list->addWidget(new ArrayItemWidget(this, window));
 }

@@ -173,7 +173,6 @@ static void template_match_beep_filter_update(void *data, obs_data_t *settings)
 			filter->debug_view_active = false;
 		}
 	}
-	blog(LOG_INFO, "UPDATE");
 }
 
 void thread_loop(void *data);
@@ -195,7 +194,6 @@ static void *template_match_beep_filter_create(obs_data_t *settings,
 	filter->settings = settings;
 	filter->debug_view_active = false;
 
-	blog(LOG_INFO, "CREATE");
 	return filter;
 }
 
