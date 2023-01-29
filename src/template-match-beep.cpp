@@ -55,7 +55,6 @@ OBS_MODULE_USE_DEFAULT_LOCALE(PLUGIN_NAME, "en-US")
 #endif
 
 #define SETTING_AUTO_ROI "auto_roi"
-#define SETTING_DELAY_MS "delay_ms"
 #define SETTING_COOLDOWN_MS "cooldown_ms"
 #define SETTING_PATH "template_path"
 #define SETTING_SAVE_FRAME "save_frame"
@@ -68,7 +67,6 @@ OBS_MODULE_USE_DEFAULT_LOCALE(PLUGIN_NAME, "en-US")
 #define SETTING_XYGROUP_Y2 "xygroup_y2"
 
 #define TEXT_AUTO_ROI obs_module_text("Automatic ROI on next detection")
-#define TEXT_DELAY_MS obs_module_text("Timer")
 #define TEXT_COOLDOWN_MS obs_module_text("Cooldown timer")
 #define TEXT_PATH obs_module_text("Template image path")
 #define TEXT_SAVE_FRAME obs_module_text("Save frame")
@@ -98,7 +96,6 @@ struct template_match_beep_data {
 	std::unique_ptr<lvk::FrameIngest> frame_ingest;
 
 	// Plugin settings
-	uint64_t timer;
 	uint64_t cooldown_timer;
 	const char *path;
 	bool debug_view;
@@ -124,8 +121,6 @@ static void template_match_beep_filter_update(void *data, obs_data_t *settings)
 {
 	struct template_match_beep_data *filter =
 		(template_match_beep_data *)data;
-	uint64_t new_timer =
-		(uint64_t)obs_data_get_int(settings, SETTING_DELAY_MS);
 
 	uint64_t new_cooldown =
 		(uint64_t)obs_data_get_int(settings, SETTING_COOLDOWN_MS);
@@ -165,7 +160,6 @@ static void template_match_beep_filter_update(void *data, obs_data_t *settings)
 		cv::Rect(cv::Point(filter->xygroup_x1, filter->xygroup_y1),
 			 cv::Point(filter->xygroup_x2, filter->xygroup_y2));
 
-	filter->timer = new_timer;
 	filter->cooldown_timer = new_cooldown;
 	// Update template image on new path
 	if (filter->path != new_path) {
@@ -200,7 +194,7 @@ static void *template_match_beep_filter_create(obs_data_t *settings,
 
 	filter->settings = settings;
 	filter->debug_view_active = false;
-	//filter->custom_settings = CustomBeepSettings;
+
 	blog(LOG_INFO, "CREATE");
 	return filter;
 }
@@ -258,10 +252,6 @@ static obs_properties_t *template_match_beep_filter_properties(void *data)
 		(template_match_beep_data *)data;
 
 	obs_properties_t *props = obs_properties_create();
-
-	obs_property_t *p = obs_properties_add_int(
-		props, SETTING_DELAY_MS, TEXT_DELAY_MS, 100, INT_MAX, 1);
-	obs_property_int_set_suffix(p, " ms");
 
 	obs_property_t *c = obs_properties_add_int(
 		props, SETTING_COOLDOWN_MS, TEXT_COOLDOWN_MS, 100, INT_MAX, 1);
@@ -440,16 +430,18 @@ void thread_loop(void *data)
 				}
 
 				umat3.copyTo(filter->current_cv_frame);
-				// Detection beep
+
 				// NOTE: the beep is synchronous!
-				beep(880, 100);
-				preciseSleep((filter->timer - 100) *
-					     MSEC_TO_SEC);
-				// Beep after timer
-				beep(440, 100);
+				// Beep and wait according to settings
+				for (Event e : filter->custom_settings->GetEvents()) {
+					if (e.type == EventType::Beep) {
+						beep(e.frequency, e.length);
+					} else {
+						preciseSleep(e.length * MSEC_TO_SEC);
+					}
+				}
 				// Cooldown time until next template match
-				preciseSleep((filter->cooldown_timer - 100) *
-					     MSEC_TO_SEC);
+				preciseSleep(filter->cooldown_timer * MSEC_TO_SEC);
 			}
 		} else {
 			// chill for a bit

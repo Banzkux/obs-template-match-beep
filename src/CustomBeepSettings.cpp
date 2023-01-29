@@ -171,6 +171,21 @@ void CustomBeepSettings::ChangedArrayItem(ArrayItemWidget* widget, const char* n
 	obs_data_set_int(item, name, value);
 }
 
+std::vector<Event> CustomBeepSettings::GetEvents() {
+	std::vector<Event> events;
+	
+	for (int i = 0; i < obs_data_array_count(m_Settings); i++) {
+		Event current;
+		obs_data_t *item = obs_data_array_item(m_Settings, i);
+		current.type = static_cast<EventType>(obs_data_get_int(item, SETTING_EVENT_TYPE));
+		current.length = obs_data_get_int(item, SETTING_EVENT_LENGTH);
+		current.frequency = obs_data_get_int(item, SETTING_EVENT_FREQUENCY);
+		events.push_back(current);
+	}
+
+	return events;
+}
+
 void CustomBeepSettings::addNewEvent()
 {
 	blog(LOG_INFO, "TEST EVENT, count: %i", list->count());
@@ -185,8 +200,7 @@ obs_data_t *CustomBeepSettings::CreateArrayItem(EventType type)
 
 	obs_data_set_int(item, SETTING_EVENT_LENGTH, 100);
 
-	if (type == EventType::Beep)
-		obs_data_set_int(item, SETTING_EVENT_FREQUENCY, 440);
+	obs_data_set_int(item, SETTING_EVENT_FREQUENCY, 440);
 
 	return item;
 }

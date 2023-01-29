@@ -38,6 +38,12 @@ protected:
 };
 
 enum class EventType { Beep, Wait };
+
+struct Event {
+	EventType type;
+	int length;
+	int frequency;
+};
 class CustomBeepSettings;
 
 class ArrayItemWidget : public QWidget {
@@ -76,6 +82,8 @@ public:
 	void DeleteArrayItem(ArrayItemWidget *widget);
 
 	void ChangedArrayItem(ArrayItemWidget *widget, const char *name, int value);
+
+	std::vector<Event> GetEvents();
 
 private:
 	void addNewEvent();
