@@ -87,6 +87,9 @@ public:
 
 	std::vector<Event> GetEvents();
 
+private slots:
+	void WindowClosed(int result);
+
 private:
 	void addNewEvent();
 

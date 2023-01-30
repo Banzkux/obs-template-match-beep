@@ -141,10 +141,14 @@ void CustomBeepSettings::LoadSettings() {
 
 void CustomBeepSettings::CreateSettingsWindow()
 {
+	if (window != nullptr)
+		return;
+
 	window = new QDialog();
 	window->resize(420, 496);
-
 	window->setWindowTitle(QApplication::translate("beep_settings", "Beep Settings"));
+	connect(window, SIGNAL(finished(int)), this, SLOT(WindowClosed(int)));
+
 	mainLayout = new QVBoxLayout(window);
 
 	scrollarea = new QScrollArea(window);
@@ -173,11 +177,9 @@ void CustomBeepSettings::CreateSettingsWindow()
 
 void CustomBeepSettings::ShowSettingsWindow() {
 	CreateSettingsWindow();
-
+	
 	window->show();
-	window->exec();
-
-	delete window;
+	window->activateWindow();
 }
 
 void CustomBeepSettings::DeleteArrayItem(ArrayItemWidget *widget)
@@ -204,6 +206,13 @@ std::vector<Event> CustomBeepSettings::GetEvents() {
 	}
 
 	return events;
+}
+
+void CustomBeepSettings::WindowClosed(int result) 
+{
+	delete window;
+	window = nullptr;
+	UNUSED_PARAMETER(result);
 }
 
 void CustomBeepSettings::addNewEvent()
