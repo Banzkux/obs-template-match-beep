@@ -66,7 +66,7 @@ ArrayItemWidget::ArrayItemWidget(CustomBeepSettings *settings, QWidget *parent)
 	connect(frequency, SIGNAL(valueChanged(int)), this, SLOT(currentFrequencyChanged(int)));
 
 	button = new QPushButton(this);
-	button->setText("x");
+	button->setProperty("themeID", "removeIconSmall");
 	button->setMaximumWidth(38);
 
 	connect(button, SIGNAL(clicked()), this, SLOT(removeClicked()));
@@ -163,7 +163,8 @@ void CustomBeepSettings::CreateSettingsWindow()
 	techArea->setLayout(list);
 	scrollarea->setWidget(techArea);
 
-	button = new QPushButton("Add event", window);
+	button = new QPushButton("Event", window);
+	button->setProperty("themeID", "addIconSmall");
 	connect(button, &QPushButton::clicked, this, &CustomBeepSettings::addNewEvent);
 	mainLayout->addWidget(button);
 
