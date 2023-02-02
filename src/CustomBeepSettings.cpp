@@ -21,101 +21,101 @@ bool MouseWheelWidgetAdjustmentGuard::eventFilter(QObject *o, QEvent *e)
 ArrayItemWidget::ArrayItemWidget(obs_data_t *item, CustomBeepSettings *settings, QWidget *parent)
 	: ArrayItemWidget(settings, parent)
 {
-	type->setCurrentIndex(obs_data_get_int(item, SETTING_EVENT_TYPE));
-	length->setValue(obs_data_get_int(item, SETTING_EVENT_LENGTH));
-	frequency->setValue(obs_data_get_int(item, SETTING_EVENT_FREQUENCY));
+	m_Type->setCurrentIndex(obs_data_get_int(item, SETTING_EVENT_TYPE));
+	m_Length->setValue(obs_data_get_int(item, SETTING_EVENT_LENGTH));
+	m_Frequency->setValue(obs_data_get_int(item, SETTING_EVENT_FREQUENCY));
 }
 
 ArrayItemWidget::ArrayItemWidget(CustomBeepSettings *settings, QWidget *parent)
-	: QWidget(parent), settings(settings)
+	: QWidget(parent), m_Settings(settings)
 {
-	layout = new QHBoxLayout(this);
+	m_Layout = new QHBoxLayout(this);
 	QMargins margins(0, 0, 0, 0);
-	layout->setContentsMargins(margins);
+	m_Layout->setContentsMargins(margins);
 
-	type = new QComboBox(this);
+	m_Type = new QComboBox(this);
 
-	type->addItem("Beep", (int)EventType::Beep);
-	type->addItem("Wait", (int)EventType::Wait);
-	type->setMaximumWidth(65);
-	type->setFocusPolicy(Qt::FocusPolicy::StrongFocus);
-	type->installEventFilter(new MouseWheelWidgetAdjustmentGuard(type));
+	m_Type->addItem("Beep", (int)EventType::Beep);
+	m_Type->addItem("Wait", (int)EventType::Wait);
+	m_Type->setMaximumWidth(65);
+	m_Type->setFocusPolicy(Qt::FocusPolicy::StrongFocus);
+	m_Type->installEventFilter(new MouseWheelWidgetAdjustmentGuard(m_Type));
 
-	connect(type, SIGNAL(currentIndexChanged(int)), this, SLOT(currentTypeChanged(int)));
+	connect(m_Type, SIGNAL(currentIndexChanged(int)), this, SLOT(currentTypeChanged(int)));
 
-	length = new QSpinBox(this);
-	length->setMinimum(1);
-	length->setMaximum(INT_MAX);
+	m_Length = new QSpinBox(this);
+	m_Length->setMinimum(1);
+	m_Length->setMaximum(INT_MAX);
 
-	length->setSuffix(" ms");
-	length->setFocusPolicy(Qt::FocusPolicy::StrongFocus);
-	length->installEventFilter(new MouseWheelWidgetAdjustmentGuard(length));
-	length->setValue(100);
+	m_Length->setSuffix(" ms");
+	m_Length->setFocusPolicy(Qt::FocusPolicy::StrongFocus);
+	m_Length->installEventFilter(new MouseWheelWidgetAdjustmentGuard(m_Length));
+	m_Length->setValue(100);
 
-	connect(length, SIGNAL(valueChanged(int)), this, SLOT(currentLengthChanged(int)));
+	connect(m_Length, SIGNAL(valueChanged(int)), this, SLOT(currentLengthChanged(int)));
 
-	frequency = new QSpinBox(this);
-	frequency->setMinimum(37);
-	frequency->setMaximum(32767);
-	frequency->setSuffix(" Hz");
-	frequency->setVisible(type->currentIndex() == (int)EventType::Beep);
-	frequency->setFocusPolicy(Qt::FocusPolicy::StrongFocus);
-	frequency->installEventFilter(new MouseWheelWidgetAdjustmentGuard(frequency));
-	frequency->setValue(440);
+	m_Frequency = new QSpinBox(this);
+	m_Frequency->setMinimum(37);
+	m_Frequency->setMaximum(32767);
+	m_Frequency->setSuffix(" Hz");
+	m_Frequency->setVisible(m_Type->currentIndex() == (int)EventType::Beep);
+	m_Frequency->setFocusPolicy(Qt::FocusPolicy::StrongFocus);
+	m_Frequency->installEventFilter(new MouseWheelWidgetAdjustmentGuard(m_Frequency));
+	m_Frequency->setValue(440);
 
-	connect(frequency, SIGNAL(valueChanged(int)), this, SLOT(currentFrequencyChanged(int)));
+	connect(m_Frequency, SIGNAL(valueChanged(int)), this, SLOT(currentFrequencyChanged(int)));
 
-	button = new QPushButton(this);
-	button->setProperty("themeID", "removeIconSmall");
-	button->setMaximumWidth(38);
+	m_Button = new QPushButton(this);
+	m_Button->setProperty("themeID", "removeIconSmall");
+	m_Button->setMaximumWidth(38);
 
-	connect(button, SIGNAL(clicked()), this, SLOT(removeClicked()));
+	connect(m_Button, SIGNAL(clicked()), this, SLOT(removeClicked()));
 
-	layout->addWidget(type);
-	layout->addWidget(length);
-	layout->addWidget(frequency);
-	layout->addWidget(button);
+	m_Layout->addWidget(m_Type);
+	m_Layout->addWidget(m_Length);
+	m_Layout->addWidget(m_Frequency);
+	m_Layout->addWidget(m_Button);
 }
 
 ArrayItemWidget::~ArrayItemWidget()
 {
-	delete layout;
+	delete m_Layout;
 }
 
 void ArrayItemWidget::currentTypeChanged(int index)
 {
-	settings->ChangedArrayItem(this, SETTING_EVENT_TYPE, index);
+	m_Settings->ChangedArrayItem(this, SETTING_EVENT_TYPE, index);
 	if (index == (int)EventType::Beep) {
-		frequency->setVisible(true);
+		m_Frequency->setVisible(true);
 	} else {
-		frequency->setVisible(false);
+		m_Frequency->setVisible(false);
 	}
 }
 
 void ArrayItemWidget::currentLengthChanged(int value) {
-	settings->ChangedArrayItem(this, SETTING_EVENT_LENGTH, value);
+	m_Settings->ChangedArrayItem(this, SETTING_EVENT_LENGTH, value);
 }
 
 void ArrayItemWidget::currentFrequencyChanged(int value)
 {
-	settings->ChangedArrayItem(this, SETTING_EVENT_FREQUENCY, value);
+	m_Settings->ChangedArrayItem(this, SETTING_EVENT_FREQUENCY, value);
 }
 
 void ArrayItemWidget::removeClicked()
 {
-	settings->DeleteArrayItem(this);
+	m_Settings->DeleteArrayItem(this);
 	delete this;
 }
 
 CustomBeepSettings::CustomBeepSettings(QObject *parent)
 	: QObject(parent),
 	  m_Settings(nullptr),
-	  button(nullptr),
-	  list(nullptr),
-	  mainLayout(nullptr),
-	  scrollarea(nullptr),
-	  techArea(nullptr),
-	  window(nullptr)
+	  m_Button(nullptr),
+	  m_List(nullptr),
+	  m_MainLayout(nullptr),
+	  m_ScrollArea(nullptr),
+	  m_TechArea(nullptr),
+	  m_Window(nullptr)
 {
 	
 }
@@ -135,42 +135,42 @@ void CustomBeepSettings::LoadSettings() {
 	// Create UI from loaded settings
 	for (int i = 0; i < obs_data_array_count(m_Settings); i++) {
 		obs_data_t *item = obs_data_array_item(m_Settings, i);
-		list->addWidget(new ArrayItemWidget(item, this, window));
+		m_List->addWidget(new ArrayItemWidget(item, this, m_Window));
 	}
 }
 
 void CustomBeepSettings::CreateSettingsWindow()
 {
-	if (window != nullptr)
+	if (m_Window != nullptr)
 		return;
 
-	window = new QDialog();
-	window->resize(420, 496);
-	window->setWindowTitle(QApplication::translate("beep_settings", "Beep Settings"));
-	connect(window, SIGNAL(finished(int)), this, SLOT(WindowClosed(int)));
+	m_Window = new QDialog();
+	m_Window->resize(420, 496);
+	m_Window->setWindowTitle(QApplication::translate("beep_settings", "Beep Settings"));
+	connect(m_Window, SIGNAL(finished(int)), this, SLOT(WindowClosed(int)));
 
-	mainLayout = new QVBoxLayout(window);
+	m_MainLayout = new QVBoxLayout(m_Window);
 
-	scrollarea = new QScrollArea(window);
-	mainLayout->addWidget(scrollarea);
-	scrollarea->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-	scrollarea->setWidgetResizable(true);
-	scrollarea->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
+	m_ScrollArea = new QScrollArea(m_Window);
+	m_MainLayout->addWidget(m_ScrollArea);
+	m_ScrollArea->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+	m_ScrollArea->setWidgetResizable(true);
+	m_ScrollArea->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
 
-	techArea = new QWidget(window);
+	m_TechArea = new QWidget(m_Window);
 
-	techArea->setObjectName("techarea");
-	techArea->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::MinimumExpanding);
-	list = new QVBoxLayout(techArea);
-	list->setAlignment(Qt::AlignTop);
+	m_TechArea->setObjectName("techarea");
+	m_TechArea->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::MinimumExpanding);
+	m_List = new QVBoxLayout(m_TechArea);
+	m_List->setAlignment(Qt::AlignTop);
 
-	techArea->setLayout(list);
-	scrollarea->setWidget(techArea);
+	m_TechArea->setLayout(m_List);
+	m_ScrollArea->setWidget(m_TechArea);
 
-	button = new QPushButton("Event", window);
-	button->setProperty("themeID", "addIconSmall");
-	connect(button, &QPushButton::clicked, this, &CustomBeepSettings::addNewEvent);
-	mainLayout->addWidget(button);
+	m_Button = new QPushButton("Event", m_Window);
+	m_Button->setProperty("themeID", "addIconSmall");
+	connect(m_Button, &QPushButton::clicked, this, &CustomBeepSettings::addNewEvent);
+	m_MainLayout->addWidget(m_Button);
 
 	LoadSettings();
 }
@@ -178,17 +178,17 @@ void CustomBeepSettings::CreateSettingsWindow()
 void CustomBeepSettings::ShowSettingsWindow() {
 	CreateSettingsWindow();
 	
-	window->show();
-	window->activateWindow();
+	m_Window->show();
+	m_Window->activateWindow();
 }
 
 void CustomBeepSettings::DeleteArrayItem(ArrayItemWidget *widget)
 {
-	obs_data_array_erase(m_Settings, list->indexOf(widget));
+	obs_data_array_erase(m_Settings, m_List->indexOf(widget));
 }
 
 void CustomBeepSettings::ChangedArrayItem(ArrayItemWidget* widget, const char* name, int value) {
-	int index = list->indexOf(widget);
+	int index = m_List->indexOf(widget);
 	obs_data_t *item = obs_data_array_item(m_Settings, index);
 	obs_data_set_int(item, name, value);
 }
@@ -210,15 +210,15 @@ std::vector<Event> CustomBeepSettings::GetEvents() {
 
 void CustomBeepSettings::WindowClosed(int result) 
 {
-	delete window;
-	window = nullptr;
+	delete m_Window;
+	m_Window = nullptr;
 	UNUSED_PARAMETER(result);
 }
 
 void CustomBeepSettings::addNewEvent()
 {
 	obs_data_array_push_back(m_Settings, CreateArrayItem(EventType::Beep));
-	list->addWidget(new ArrayItemWidget(this, window));
+	m_List->addWidget(new ArrayItemWidget(this, m_Window));
 }
 
 obs_data_t *CustomBeepSettings::CreateArrayItem(EventType type)

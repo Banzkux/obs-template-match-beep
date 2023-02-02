@@ -60,13 +60,13 @@ private slots:
 	void removeClicked();
 
 private:
-	CustomBeepSettings *settings;
+	CustomBeepSettings *m_Settings;
 
-	QHBoxLayout *layout;
-	QComboBox *type;
-	QSpinBox *length;
-	QSpinBox *frequency;
-	QPushButton *button;
+	QHBoxLayout *m_Layout;
+	QComboBox *m_Type;
+	QSpinBox *m_Length;
+	QSpinBox *m_Frequency;
+	QPushButton *m_Button;
 };
 
 class CustomBeepSettings : public QObject {
@@ -99,11 +99,11 @@ private:
 
 	obs_data_array_t *m_Settings;
 
-	QDialog *window;
-	QVBoxLayout *mainLayout;
-	QScrollArea *scrollarea;
-	QWidget *techArea;
-	QVBoxLayout *list;
-	QPushButton *button;
+	QDialog *m_Window;
+	QVBoxLayout *m_MainLayout;
+	QScrollArea *m_ScrollArea;
+	QWidget *m_TechArea;
+	QVBoxLayout *m_List;
+	QPushButton *m_Button;
 };
 #endif // !CUSTOMBEEPSETTINGS_H
