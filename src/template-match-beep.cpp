@@ -107,7 +107,7 @@ struct template_match_beep_data {
 	int xygroup_x1, xygroup_y1;
 	int xygroup_x2, xygroup_y2;
 
-	CustomBeepSettings* custom_settings;
+	CustomBeepSettings *custom_settings;
 
 	signal_handler_t *signal_handler;
 };
@@ -121,14 +121,11 @@ static const char *template_match_beep_filter_name(void *unused)
 // Filters settings were updated
 static void template_match_beep_filter_update(void *data, obs_data_t *settings)
 {
-	struct template_match_beep_data *filter =
-		(template_match_beep_data *)data;
+	struct template_match_beep_data *filter = (template_match_beep_data *)data;
 
-	uint64_t new_cooldown =
-		(uint64_t)obs_data_get_int(settings, SETTING_COOLDOWN_MS);
+	uint64_t new_cooldown = (uint64_t)obs_data_get_int(settings, SETTING_COOLDOWN_MS);
 
-	const char *new_path =
-		(const char *)obs_data_get_string(settings, SETTING_PATH);
+	const char *new_path = (const char *)obs_data_get_string(settings, SETTING_PATH);
 
 	bool new_view = (bool)obs_data_get_bool(settings, SETTING_DBUG_VIEW);
 
@@ -137,19 +134,13 @@ static void template_match_beep_filter_update(void *data, obs_data_t *settings)
 
 	filter->custom_settings->CreateOBSSettings(settings);
 
-
 	// ROI group
 	if (obs_data_get_bool(settings, SETTING_XYGROUP)) {
-		filter->xygroup_x1 =
-			(int)obs_data_get_int(settings, SETTING_XYGROUP_X1);
-		filter->xygroup_y1 =
-			(int)obs_data_get_int(settings, SETTING_XYGROUP_Y1);
-		filter->xygroup_x2 =
-			(int)obs_data_get_int(settings, SETTING_XYGROUP_X2);
-		filter->xygroup_y2 =
-			(int)obs_data_get_int(settings, SETTING_XYGROUP_Y2);
-		filter->auto_roi =
-			obs_data_get_bool(settings, SETTING_AUTO_ROI);
+		filter->xygroup_x1 = (int)obs_data_get_int(settings, SETTING_XYGROUP_X1);
+		filter->xygroup_y1 = (int)obs_data_get_int(settings, SETTING_XYGROUP_Y1);
+		filter->xygroup_x2 = (int)obs_data_get_int(settings, SETTING_XYGROUP_X2);
+		filter->xygroup_y2 = (int)obs_data_get_int(settings, SETTING_XYGROUP_Y2);
+		filter->auto_roi = obs_data_get_bool(settings, SETTING_AUTO_ROI);
 	} else {
 		filter->xygroup_x1 = 0;
 		filter->xygroup_y1 = 0;
@@ -158,9 +149,8 @@ static void template_match_beep_filter_update(void *data, obs_data_t *settings)
 		filter->auto_roi = false;
 	}
 
-	filter->roi =
-		cv::Rect(cv::Point(filter->xygroup_x1, filter->xygroup_y1),
-			 cv::Point(filter->xygroup_x2, filter->xygroup_y2));
+	filter->roi = cv::Rect(cv::Point(filter->xygroup_x1, filter->xygroup_y1),
+			       cv::Point(filter->xygroup_x2, filter->xygroup_y2));
 
 	filter->cooldown_timer = new_cooldown;
 	// Update template image on new path
@@ -204,7 +194,8 @@ void end_thread(void *data)
 	filter->current_frame = nullptr;
 }
 
-static void template_match_beep_filter_enabled(void *data, calldata_t *calldata) {
+static void template_match_beep_filter_enabled(void *data, calldata_t *calldata)
+{
 	bool enabled = calldata_bool(calldata, "enabled");
 
 	if (enabled)
@@ -213,8 +204,7 @@ static void template_match_beep_filter_enabled(void *data, calldata_t *calldata)
 		end_thread(data);
 }
 
-static void *template_match_beep_filter_create(obs_data_t *settings,
-					       obs_source_t *context)
+static void *template_match_beep_filter_create(obs_data_t *settings, obs_source_t *context)
 {
 	struct template_match_beep_data *filter =
 		(template_match_beep_data *)bzalloc(sizeof(*filter));
@@ -231,27 +221,26 @@ static void *template_match_beep_filter_create(obs_data_t *settings,
 	filter->debug_view_active = false;
 
 	filter->signal_handler = obs_source_get_signal_handler(context);
-	signal_handler_connect(filter->signal_handler, "enable", template_match_beep_filter_enabled, filter);
+	signal_handler_connect(filter->signal_handler, "enable", template_match_beep_filter_enabled,
+			       filter);
 
 	return filter;
 }
 
 static void template_match_beep_filter_destroy(void *data)
 {
-	struct template_match_beep_data *filter =
-		(template_match_beep_data *)data;
+	struct template_match_beep_data *filter = (template_match_beep_data *)data;
 
-	signal_handler_disconnect(filter->signal_handler, "enable", template_match_beep_filter_enabled, filter);
+	signal_handler_disconnect(filter->signal_handler, "enable",
+				  template_match_beep_filter_enabled, filter);
 
 	end_thread(data);
 	bfree(data);
 }
 
-bool template_match_beep_save_frame(obs_properties_t *props,
-				    obs_property_t *property, void *data)
+bool template_match_beep_save_frame(obs_properties_t *props, obs_property_t *property, void *data)
 {
-	struct template_match_beep_data *filter =
-		(template_match_beep_data *)data;
+	struct template_match_beep_data *filter = (template_match_beep_data *)data;
 
 	cv::UMat umat, umat2;
 	filter->frame_ingest->upload(filter->current_frame, umat);
@@ -260,9 +249,7 @@ bool template_match_beep_save_frame(obs_properties_t *props,
 	// Save image dialog
 	QString filename = QFileDialog::getSaveFileName(
 		nullptr, "Save frame",
-		QStandardPaths::writableLocation(
-			QStandardPaths::PicturesLocation),
-		"*.png");
+		QStandardPaths::writableLocation(QStandardPaths::PicturesLocation), "*.png");
 
 	if (!filename.isNull())
 		cv::imwrite(filename.toStdString(), umat2);
@@ -272,12 +259,10 @@ bool template_match_beep_save_frame(obs_properties_t *props,
 	return true;
 }
 
-bool template_match_beep_settings(obs_properties_t *props,
-				    obs_property_t *property, void *data)
+bool template_match_beep_settings(obs_properties_t *props, obs_property_t *property, void *data)
 {
-	struct template_match_beep_data *filter =
-		(template_match_beep_data *)data;
-	
+	struct template_match_beep_data *filter = (template_match_beep_data *)data;
+
 	filter->custom_settings->ShowSettingsWindow();
 
 	UNUSED_PARAMETER(props);
@@ -287,32 +272,29 @@ bool template_match_beep_settings(obs_properties_t *props,
 
 static obs_properties_t *template_match_beep_filter_properties(void *data)
 {
-	struct template_match_beep_data *filter =
-		(template_match_beep_data *)data;
+	struct template_match_beep_data *filter = (template_match_beep_data *)data;
 
 	obs_properties_t *props = obs_properties_create();
 
-	obs_property_t *c = obs_properties_add_int(
-		props, SETTING_COOLDOWN_MS, TEXT_COOLDOWN_MS, 100, INT_MAX, 1);
+	obs_property_t *c = obs_properties_add_int(props, SETTING_COOLDOWN_MS, TEXT_COOLDOWN_MS,
+						   100, INT_MAX, 1);
 	obs_property_int_set_suffix(c, " ms");
 
 	// Template Image path
-	obs_properties_add_path(props, SETTING_PATH, TEXT_PATH, OBS_PATH_FILE,
-				"*.png", NULL);
+	obs_properties_add_path(props, SETTING_PATH, TEXT_PATH, OBS_PATH_FILE, "*.png", NULL);
 
 	obs_properties_add_button(props, SETTING_SAVE_FRAME, TEXT_SAVE_FRAME,
 				  template_match_beep_save_frame);
 
-	obs_properties_add_button(props, SETTING_BEEP_SETTINGS,
-				  TEXT_BEEP_SETTINGS,
+	obs_properties_add_button(props, SETTING_BEEP_SETTINGS, TEXT_BEEP_SETTINGS,
 				  template_match_beep_settings);
 
 	obs_properties_add_bool(props, SETTING_DBUG_VIEW, TEXT_DBUG_VIEW);
 
 	// Region of interest setting group
 	obs_properties_t *xygroup = obs_properties_create();
-	obs_properties_add_group(props, SETTING_XYGROUP, TEXT_XYGROUP,
-				 OBS_GROUP_CHECKABLE, xygroup);
+	obs_properties_add_group(props, SETTING_XYGROUP, TEXT_XYGROUP, OBS_GROUP_CHECKABLE,
+				 xygroup);
 
 	obs_properties_add_bool(xygroup, SETTING_AUTO_ROI, TEXT_AUTO_ROI);
 	// Default limits for ROI
@@ -323,15 +305,11 @@ static obs_properties_t *template_match_beep_filter_properties(void *data)
 		width = filter->current_frame->width;
 		height = filter->current_frame->height;
 	}
-	obs_properties_add_int(xygroup, SETTING_XYGROUP_X1, TEXT_XYGROUP_X1, 0,
-			       width, 1);
-	obs_properties_add_int(xygroup, SETTING_XYGROUP_Y1, TEXT_XYGROUP_Y1, 0,
-			       height, 1);
+	obs_properties_add_int(xygroup, SETTING_XYGROUP_X1, TEXT_XYGROUP_X1, 0, width, 1);
+	obs_properties_add_int(xygroup, SETTING_XYGROUP_Y1, TEXT_XYGROUP_Y1, 0, height, 1);
 
-	obs_properties_add_int(xygroup, SETTING_XYGROUP_X2, TEXT_XYGROUP_X2, 0,
-			       width, 1);
-	obs_properties_add_int(xygroup, SETTING_XYGROUP_Y2, TEXT_XYGROUP_Y2, 0,
-			       height, 1);
+	obs_properties_add_int(xygroup, SETTING_XYGROUP_X2, TEXT_XYGROUP_X2, 0, width, 1);
+	obs_properties_add_int(xygroup, SETTING_XYGROUP_Y2, TEXT_XYGROUP_Y2, 0, height, 1);
 
 	return props;
 }
@@ -378,8 +356,7 @@ void preciseSleep(double seconds)
 // Thread for template matching and beeping
 void thread_loop(void *data)
 {
-	struct template_match_beep_data *filter =
-		(template_match_beep_data *)data;
+	struct template_match_beep_data *filter = (template_match_beep_data *)data;
 
 	uint64_t frame_ts = 0;
 
@@ -393,12 +370,10 @@ void thread_loop(void *data)
 		    !filter->template_image.empty() && filter->frame_ingest) {
 			frame_ts = filter->current_frame->timestamp;
 			cv::UMat umatroi, umat, umat2, umat3;
-			filter->frame_ingest->upload(filter->current_frame,
-						     umat);
+			filter->frame_ingest->upload(filter->current_frame, umat);
 			if (!filter->roi.empty() && !filter->auto_roi &&
 			    (filter->roi.width >= filter->template_image.cols &&
-			     filter->roi.height >=
-				     filter->template_image.rows)) {
+			     filter->roi.height >= filter->template_image.rows)) {
 				umat(filter->roi).copyTo(umat);
 			}
 			// Changing color format, this may become issue
@@ -407,10 +382,8 @@ void thread_loop(void *data)
 			// Gray
 			cv::cvtColor(umat2, umat3, cv::COLOR_BGR2GRAY);
 			cv::Mat result;
-			int result_cols =
-				umat3.cols - filter->template_image.cols + 1;
-			int result_rows =
-				umat3.rows - filter->template_image.rows + 1;
+			int result_cols = umat3.cols - filter->template_image.cols + 1;
+			int result_rows = umat3.rows - filter->template_image.rows + 1;
 			result.create(result_rows, result_cols, CV_32FC1);
 
 			cv::matchTemplate(umat3, filter->template_image, result,
@@ -418,54 +391,38 @@ void thread_loop(void *data)
 
 			double minVal, maxVal;
 			cv::Point minLoc, maxLoc, matchLoc;
-			cv::minMaxLoc(result, &minVal, &maxVal, &minLoc,
-				      &maxLoc, cv::Mat());
+			cv::minMaxLoc(result, &minVal, &maxVal, &minLoc, &maxLoc, cv::Mat());
 			matchLoc = maxLoc;
 
-			cv::threshold(result, result, 0.80, 1.0,
-				      cv::THRESH_TOZERO);
+			cv::threshold(result, result, 0.80, 1.0, cv::THRESH_TOZERO);
 			umat3.copyTo(filter->current_cv_frame);
 			// Detected template image!
 			if (maxVal > 0.8) {
 				filter->xygroup_x1 = matchLoc.x;
 				filter->xygroup_y1 = matchLoc.y;
-				filter->xygroup_x2 =
-					matchLoc.x +
-					filter->template_image.cols;
-				filter->xygroup_y2 =
-					matchLoc.y +
-					filter->template_image.rows;
+				filter->xygroup_x2 = matchLoc.x + filter->template_image.cols;
+				filter->xygroup_y2 = matchLoc.y + filter->template_image.rows;
 				cv::rectangle(umat3, matchLoc,
-					      cv::Point(filter->xygroup_x2,
-							filter->xygroup_y2),
+					      cv::Point(filter->xygroup_x2, filter->xygroup_y2),
 					      cv::Scalar(255), 2, 8, 0);
 				if (filter->auto_roi) {
-					obs_data_set_bool(filter->settings,
-							  SETTING_AUTO_ROI,
+					obs_data_set_bool(filter->settings, SETTING_AUTO_ROI,
 							  false);
-					obs_data_set_int(filter->settings,
-							 SETTING_XYGROUP_X1,
+					obs_data_set_int(filter->settings, SETTING_XYGROUP_X1,
 							 matchLoc.x);
-					obs_data_set_int(filter->settings,
-							 SETTING_XYGROUP_Y1,
+					obs_data_set_int(filter->settings, SETTING_XYGROUP_Y1,
 							 matchLoc.y);
-					obs_data_set_int(filter->settings,
-							 SETTING_XYGROUP_X2,
+					obs_data_set_int(filter->settings, SETTING_XYGROUP_X2,
 							 filter->xygroup_x2);
-					obs_data_set_int(filter->settings,
-							 SETTING_XYGROUP_Y2,
+					obs_data_set_int(filter->settings, SETTING_XYGROUP_Y2,
 							 filter->xygroup_y2);
 					filter->auto_roi = false;
 
 					filter->roi = cv::Rect(
 						matchLoc,
-						cv::Point(
-							matchLoc.x +
-								filter->template_image
-									.cols,
-							matchLoc.y +
-								filter->template_image
-									.rows));
+						cv::Point(matchLoc.x + filter->template_image.cols,
+							  matchLoc.y +
+								  filter->template_image.rows));
 				}
 
 				umat3.copyTo(filter->current_cv_frame);
@@ -484,27 +441,24 @@ void thread_loop(void *data)
 			}
 		} else {
 			// chill for a bit
-			std::this_thread::sleep_for(
-				std::chrono::milliseconds(1));
+			std::this_thread::sleep_for(std::chrono::milliseconds(1));
 		}
 	}
 }
 
 // Filter gets a frame
-static struct obs_source_frame *
-template_match_beep_filter_video(void *data, struct obs_source_frame *frame)
+static struct obs_source_frame *template_match_beep_filter_video(void *data,
+								 struct obs_source_frame *frame)
 {
-	struct template_match_beep_data *filter =
-		(template_match_beep_data *)data;
+	struct template_match_beep_data *filter = (template_match_beep_data *)data;
 
 	if (filter->source == nullptr)
 		filter->source = obs_filter_get_parent(filter->context);
 
 	if (filter->frame_ingest && lvk::FrameIngest::test_obs_frame(frame))
 		filter->current_frame = frame;
-	
-	if (!filter->frame_ingest ||
-	    filter->frame_ingest->format() != frame->format)
+
+	if (!filter->frame_ingest || filter->frame_ingest->format() != frame->format)
 		filter->frame_ingest = lvk::FrameIngest::Select(frame->format);
 
 	// Debug view
@@ -533,24 +487,19 @@ bool obs_module_load(void)
 	struct obs_source_info template_match_beep_filter = {};
 	template_match_beep_filter.id = "template_match_beep_filter";
 	template_match_beep_filter.type = OBS_SOURCE_TYPE_FILTER,
-	template_match_beep_filter.output_flags = OBS_SOURCE_VIDEO |
-						  OBS_SOURCE_ASYNC;
+	template_match_beep_filter.output_flags = OBS_SOURCE_VIDEO | OBS_SOURCE_ASYNC;
 	template_match_beep_filter.get_name = template_match_beep_filter_name;
 	template_match_beep_filter.create = template_match_beep_filter_create;
 	template_match_beep_filter.destroy = template_match_beep_filter_destroy;
 	template_match_beep_filter.update = template_match_beep_filter_update,
-	template_match_beep_filter.get_properties =
-		template_match_beep_filter_properties;
-	template_match_beep_filter.filter_video =
-		template_match_beep_filter_video;
-	template_match_beep_filter.filter_remove =
-		template_match_beep_filter_remove;
+	template_match_beep_filter.get_properties = template_match_beep_filter_properties;
+	template_match_beep_filter.filter_video = template_match_beep_filter_video;
+	template_match_beep_filter.filter_remove = template_match_beep_filter_remove;
 	template_match_beep_filter.activate = template_match_beep_filter_activate;
 	template_match_beep_filter.deactivate = template_match_beep_filter_deactivate;
 
 	obs_register_source(&template_match_beep_filter);
-	blog(LOG_INFO, "plugin loaded successfully (version %s)",
-	     PLUGIN_VERSION);
+	blog(LOG_INFO, "plugin loaded successfully (version %s)", PLUGIN_VERSION);
 	return true;
 }
 

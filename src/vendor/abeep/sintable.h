@@ -13,14 +13,13 @@ static int16_t sintable(unsigned int index)
 	if (index < SINTABLE_PHYSICAL_SIZE)
 		return SINTABLE_PHYSICAL[index];
 	else if (index < 2 * SINTABLE_PHYSICAL_SIZE)
-		return SINTABLE_PHYSICAL[SINTABLE_PHYSICAL_SIZE -
-					 (index - SINTABLE_PHYSICAL_SIZE) - 1];
+		return SINTABLE_PHYSICAL[SINTABLE_PHYSICAL_SIZE - (index - SINTABLE_PHYSICAL_SIZE) -
+					 1];
 	else if (index < 3 * SINTABLE_PHYSICAL_SIZE)
 		return -SINTABLE_PHYSICAL[index - 2 * SINTABLE_PHYSICAL_SIZE];
 	else
 		return -SINTABLE_PHYSICAL[SINTABLE_PHYSICAL_SIZE -
-					  (index - 3 * SINTABLE_PHYSICAL_SIZE) -
-					  1];
+					  (index - 3 * SINTABLE_PHYSICAL_SIZE) - 1];
 }
 
 #endif

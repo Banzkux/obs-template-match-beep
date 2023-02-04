@@ -75,11 +75,11 @@ public:
 	CustomBeepSettings(QObject *parent = nullptr);
 	~CustomBeepSettings();
 
-    void CreateOBSSettings(obs_data_t *settings);
+	void CreateOBSSettings(obs_data_t *settings);
 	void LoadSettings();
 
 	void CreateSettingsWindow();
-    void ShowSettingsWindow();
+	void ShowSettingsWindow();
 
 	void DeleteArrayItem(ArrayItemWidget *widget);
 
@@ -93,7 +93,7 @@ private slots:
 private:
 	void addNewEvent();
 
-    obs_data_t *CreateArrayItem(EventType type);
+	obs_data_t *CreateArrayItem(EventType type);
 
 	void SetArrayItemType(obs_data_t *item, EventType type);
 

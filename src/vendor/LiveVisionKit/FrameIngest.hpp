@@ -52,27 +52,25 @@ protected:
 	explicit FrameIngest(video_format format);
 
 	// NOTE: returns ROI to internal buffers
-	cv::UMat upload_planes(const obs_source_frame &src,
-			       const uint32_t channels);
+	cv::UMat upload_planes(const obs_source_frame &src, const uint32_t channels);
 
 	// NOTE: returns ROI to internal buffers
-	cv::UMat upload_planes(const obs_source_frame &src,
-			       const cv::Size plane_0_size,
+	cv::UMat upload_planes(const obs_source_frame &src, const cv::Size plane_0_size,
 			       const uint32_t plane_0_channels);
 
 	// NOTE: returns ROI to internal buffers
-	std::tuple<cv::UMat, cv::UMat>
-	upload_planes(const obs_source_frame &src, const cv::Size plane_0_size,
-		      const uint32_t plane_0_channels,
-		      const cv::Size plane_1_size,
-		      const uint32_t plane_1_channels);
+	std::tuple<cv::UMat, cv::UMat> upload_planes(const obs_source_frame &src,
+						     const cv::Size plane_0_size,
+						     const uint32_t plane_0_channels,
+						     const cv::Size plane_1_size,
+						     const uint32_t plane_1_channels);
 
 	// NOTE: returns ROI to internal buffers
-	std::tuple<cv::UMat, cv::UMat, cv::UMat> upload_planes(
-		const obs_source_frame &src, const cv::Size plane_0_size,
-		const uint32_t plane_0_channels, const cv::Size plane_1_size,
-		const uint32_t plane_1_channels, const cv::Size plane_2_size,
-		const uint32_t plane_2_channels);
+	std::tuple<cv::UMat, cv::UMat, cv::UMat>
+	upload_planes(const obs_source_frame &src, const cv::Size plane_0_size,
+		      const uint32_t plane_0_channels, const cv::Size plane_1_size,
+		      const uint32_t plane_1_channels, const cv::Size plane_2_size,
+		      const uint32_t plane_2_channels);
 
 	void download_planes(const cv::UMat &plane_0, obs_source_frame &dst);
 
@@ -82,20 +80,16 @@ protected:
 	void download_planes(const cv::UMat &plane_0, const cv::UMat &plane_1,
 			     const cv::UMat &plane_2, obs_source_frame &dst);
 
-	static void fill_plane(obs_source_frame &dst, const uint32_t plane,
-			       const uint8_t value);
+	static void fill_plane(obs_source_frame &dst, const uint32_t plane, const uint8_t value);
 
-	static void merge_planes(const cv::UMat &p1, const cv::UMat &p2,
-				 const cv::UMat &p3, cv::UMat &dst);
-
-	static void merge_planes(const cv::UMat &p1, const cv::UMat &p2,
+	static void merge_planes(const cv::UMat &p1, const cv::UMat &p2, const cv::UMat &p3,
 				 cv::UMat &dst);
 
-	static void split_planes(const cv::UMat &src, cv::UMat &p1,
-				 cv::UMat &p2, cv::UMat &p3);
+	static void merge_planes(const cv::UMat &p1, const cv::UMat &p2, cv::UMat &dst);
 
-	static void split_planes(const cv::UMat &src, cv::UMat &p1,
-				 cv::UMat &p2);
+	static void split_planes(const cv::UMat &src, cv::UMat &p1, cv::UMat &p2, cv::UMat &p3);
+
+	static void split_planes(const cv::UMat &src, cv::UMat &p1, cv::UMat &p2);
 
 public:
 	static bool test_obs_frame(const obs_source_frame *frame);
@@ -103,10 +97,8 @@ public:
 private:
 	video_format m_Format = VIDEO_FORMAT_NONE;
 
-	cv::UMat m_ImportBuffer{
-		cv::UMatUsageFlags::USAGE_ALLOCATE_DEVICE_MEMORY};
-	cv::UMat m_ExportBuffer{
-		cv::UMatUsageFlags::USAGE_ALLOCATE_DEVICE_MEMORY};
+	cv::UMat m_ImportBuffer{cv::UMatUsageFlags::USAGE_ALLOCATE_DEVICE_MEMORY};
+	cv::UMat m_ExportBuffer{cv::UMatUsageFlags::USAGE_ALLOCATE_DEVICE_MEMORY};
 };
 
 // Planar 4xx formats
@@ -186,10 +178,8 @@ private:
 	cv::ColorConversionCodes m_BackwardConversion, m_BackwardStepConversion;
 
 	// NOTE: We assume this will automatically initialize on the GPU
-	cv::UMat m_ConversionBuffer{
-		cv::UMatUsageFlags::USAGE_ALLOCATE_DEVICE_MEMORY};
-	cv::UMat m_StepConversionBuffer{
-		cv::UMatUsageFlags::USAGE_ALLOCATE_DEVICE_MEMORY};
+	cv::UMat m_ConversionBuffer{cv::UMatUsageFlags::USAGE_ALLOCATE_DEVICE_MEMORY};
+	cv::UMat m_StepConversionBuffer{cv::UMatUsageFlags::USAGE_ALLOCATE_DEVICE_MEMORY};
 };
 
 }

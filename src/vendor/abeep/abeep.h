@@ -64,8 +64,7 @@ static void usage_bail(const char *executable_name)
 	printf("Usage:\n%s [-f freq] [-l length] [-r reps] [-d delay] "
 	       "[-D delay]\n",
 	       executable_name);
-	printf("%s [Options...] [-n] [--new] [Options...] ... \n",
-	       executable_name);
+	printf("%s [Options...] [-n] [--new] [Options...] ... \n", executable_name);
 	printf("%s [-h] [--help]\n", executable_name);
 	exit(EXIT_FAILURE);
 }
@@ -76,8 +75,7 @@ static void init(void)
 	int direction;
 
 	snd_pcm_hw_params_alloca(&hwparams);
-	if (snd_pcm_open(&pcm_handle, "default", SND_PCM_STREAM_PLAYBACK, 0) <
-	    0) {
+	if (snd_pcm_open(&pcm_handle, "default", SND_PCM_STREAM_PLAYBACK, 0) < 0) {
 		fputs("Error opening PCM device\n", stderr);
 		exit(EXIT_FAILURE);
 	}
@@ -85,18 +83,15 @@ static void init(void)
 		fputs("Cannot configure this PCM device.\n", stderr);
 		exit(EXIT_FAILURE);
 	}
-	if (snd_pcm_hw_params_set_access(pcm_handle, hwparams,
-					 SND_PCM_ACCESS_RW_INTERLEAVED) < 0) {
+	if (snd_pcm_hw_params_set_access(pcm_handle, hwparams, SND_PCM_ACCESS_RW_INTERLEAVED) < 0) {
 		fputs("Cannot set interleaved mode.\n", stderr);
 		exit(EXIT_FAILURE);
 	}
-	if (snd_pcm_hw_params_set_format(pcm_handle, hwparams,
-					 SND_PCM_FORMAT_S16_LE) < 0) {
+	if (snd_pcm_hw_params_set_format(pcm_handle, hwparams, SND_PCM_FORMAT_S16_LE) < 0) {
 		fputs("Cannot set format.\n", stderr);
 		exit(EXIT_FAILURE);
 	}
-	if (snd_pcm_hw_params_set_rate_near(pcm_handle, hwparams, &sample_rate,
-					    0) < 0) {
+	if (snd_pcm_hw_params_set_rate_near(pcm_handle, hwparams, &sample_rate, 0) < 0) {
 		fputs("Cannot set sample rate.\n", stderr);
 		exit(EXIT_FAILURE);
 	}
@@ -109,8 +104,8 @@ static void init(void)
 		exit(EXIT_FAILURE);
 	}
 	direction = 0;
-	if (snd_pcm_hw_params_set_period_size_last(
-		    pcm_handle, hwparams, &buffer_size, &direction) < 0) {
+	if (snd_pcm_hw_params_set_period_size_last(pcm_handle, hwparams, &buffer_size, &direction) <
+	    0) {
 		fputs("Cannot set period size to maximum.\n", stderr);
 		exit(EXIT_FAILURE);
 	}
@@ -121,8 +116,7 @@ static void init(void)
 	if (buffer == 0)
 		buffer = (int16_t *)malloc(sizeof(int16_t) * buffer_size);
 	else
-		buffer = (int16_t *)realloc(buffer,
-					    sizeof(int16_t) * buffer_size);
+		buffer = (int16_t *)realloc(buffer, sizeof(int16_t) * buffer_size);
 	if (!buffer) {
 		fputs("Cannot allocate buffer.\n", stderr);
 		exit(EXIT_FAILURE);
@@ -150,17 +144,14 @@ static void parse_command_line(int argc, char **argv, beep_parms_t *result)
 {
 	int c;
 
-	struct option opt_list[4] = {
-		{"help", 0, NULL, 'h'}, {"new", 0, NULL, 'n'}, {0, 0, 0, 0}};
-	while ((c = getopt_long(argc, argv, "f:l:r:d:D:hn", opt_list, NULL)) !=
-	       EOF) {
-		int argval =
-			-1; /* handle parsed numbers for various arguments */
+	struct option opt_list[4] = {{"help", 0, NULL, 'h'}, {"new", 0, NULL, 'n'}, {0, 0, 0, 0}};
+	while ((c = getopt_long(argc, argv, "f:l:r:d:D:hn", opt_list, NULL)) != EOF) {
+		int argval = -1; /* handle parsed numbers for various arguments */
 		float argfreq = -1;
 		switch (c) {
 		case 'f': /* freq */
-			if (!sscanf(optarg, "%f", &argfreq) ||
-			    (argfreq >= 20000 /* ack! */) || (argfreq < 1))
+			if (!sscanf(optarg, "%f", &argfreq) || (argfreq >= 20000 /* ack! */) ||
+			    (argfreq < 1))
 				usage_bail(argv[0]);
 			else
 				result->freq = argfreq;
@@ -194,8 +185,7 @@ static void parse_command_line(int argc, char **argv, beep_parms_t *result)
 			}
 			break;
 		case 'n': /* also --new - create another beep */
-			result->next =
-				(beep_parms_t *)malloc(sizeof(beep_parms_t));
+			result->next = (beep_parms_t *)malloc(sizeof(beep_parms_t));
 			result->next->freq = DEFAULT_FREQ;
 			result->next->length = DEFAULT_LENGTH;
 			result->next->reps = DEFAULT_REPS;
@@ -225,8 +215,7 @@ static void send_buffer_to_card(void)
 			fputs("Cannot send data to sound card!\n", stderr);
 			exit(EXIT_FAILURE);
 		}
-		memmove(buffer, buffer + ret,
-			(buffer_used - ret) * sizeof(int16_t));
+		memmove(buffer, buffer + ret, (buffer_used - ret) * sizeof(int16_t));
 		buffer_used -= ret;
 	}
 }
@@ -281,8 +270,7 @@ static void play_silence(unsigned int samples)
 
 static void play_frequency(double frequency, unsigned int samples)
 {
-	uint64_t fcw = frequency * SINTABLE_SIZE / sample_rate *
-		       UINT64_C(0x400000000000);
+	uint64_t fcw = frequency * SINTABLE_SIZE / sample_rate * UINT64_C(0x400000000000);
 
 	if (frequency > 2)
 		play_fcw(fcw, samples);
@@ -297,14 +285,11 @@ static void play_blocks(const beep_parms_t *parms)
 	while (parms) {
 		for (i = 0; i < parms->reps; i++) {
 			/* play the tone for the requisite amount of time. */
-			play_frequency(parms->freq,
-				       (parms->length * sample_rate + 500) /
-					       1000);
+			play_frequency(parms->freq, (parms->length * sample_rate + 500) / 1000);
 
 			/* play silence for the requisite amount of time, IF this is not the last rep or if we have an end delay. */
 			if (i + 1 < parms->reps || parms->end_delay)
-				play_frequency(0, (parms->delay * sample_rate +
-						   500) / 1000);
+				play_frequency(0, (parms->delay * sample_rate + 500) / 1000);
 		}
 		parms = parms->next;
 	}

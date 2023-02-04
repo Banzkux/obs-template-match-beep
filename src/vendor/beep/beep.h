@@ -45,8 +45,7 @@ int beep(int freq, int ms)
 {
 	abeep::init();
 	if (beep_parms == nullptr)
-		beep_parms = (abeep::beep_parms_t *)malloc(
-			sizeof(abeep::beep_parms_t));
+		beep_parms = (abeep::beep_parms_t *)malloc(sizeof(abeep::beep_parms_t));
 
 	beep_parms->freq = freq;
 	beep_parms->length = ms;
@@ -71,8 +70,7 @@ static int counter = 0;
 static int initialized = 0;
 static unsigned char theta = 0;
 
-static OSStatus tone_cb(void *inRefCon,
-			AudioUnitRenderActionFlags *ioActionFlags,
+static OSStatus tone_cb(void *inRefCon, AudioUnitRenderActionFlags *ioActionFlags,
 			const AudioTimeStamp *inTimeStamp, UInt32 inBusNumber,
 			UInt32 inNumberFrames, AudioBufferList *ioData)
 {
@@ -135,9 +133,8 @@ int beep(int freq, int ms)
 		AudioComponentInstanceNew(output, &unit);
 		AudioUnitSetProperty(unit, kAudioUnitProperty_SetRenderCallback,
 				     kAudioUnitScope_Input, 0, &cb, sizeof(cb));
-		AudioUnitSetProperty(unit, kAudioUnitProperty_StreamFormat,
-				     kAudioUnitScope_Input, 0, &stream,
-				     sizeof(stream));
+		AudioUnitSetProperty(unit, kAudioUnitProperty_StreamFormat, kAudioUnitScope_Input,
+				     0, &stream, sizeof(stream));
 		AudioUnitInitialize(unit);
 		AudioOutputUnitStart(unit);
 	}

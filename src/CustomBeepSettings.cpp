@@ -1,8 +1,7 @@
 #include "CustomBeepSettings.h"
 #include "template-match-beep.generated.h"
 
-MouseWheelWidgetAdjustmentGuard::MouseWheelWidgetAdjustmentGuard(QObject *parent)
-	: QObject(parent)
+MouseWheelWidgetAdjustmentGuard::MouseWheelWidgetAdjustmentGuard(QObject *parent) : QObject(parent)
 {
 }
 
@@ -92,7 +91,8 @@ void ArrayItemWidget::currentTypeChanged(int index)
 	}
 }
 
-void ArrayItemWidget::currentLengthChanged(int value) {
+void ArrayItemWidget::currentLengthChanged(int value)
+{
 	m_Settings->ChangedArrayItem(this, SETTING_EVENT_LENGTH, value);
 }
 
@@ -117,7 +117,6 @@ CustomBeepSettings::CustomBeepSettings(QObject *parent)
 	  m_TechArea(nullptr),
 	  m_Window(nullptr)
 {
-	
 }
 
 CustomBeepSettings::~CustomBeepSettings() {}
@@ -131,7 +130,8 @@ void CustomBeepSettings::CreateOBSSettings(obs_data_t *settings)
 	}
 }
 
-void CustomBeepSettings::LoadSettings() {
+void CustomBeepSettings::LoadSettings()
+{
 	// Create UI from loaded settings
 	for (int i = 0; i < obs_data_array_count(m_Settings); i++) {
 		obs_data_t *item = obs_data_array_item(m_Settings, i);
@@ -175,9 +175,10 @@ void CustomBeepSettings::CreateSettingsWindow()
 	LoadSettings();
 }
 
-void CustomBeepSettings::ShowSettingsWindow() {
+void CustomBeepSettings::ShowSettingsWindow()
+{
 	CreateSettingsWindow();
-	
+
 	m_Window->show();
 	m_Window->activateWindow();
 }
@@ -187,15 +188,17 @@ void CustomBeepSettings::DeleteArrayItem(ArrayItemWidget *widget)
 	obs_data_array_erase(m_Settings, m_List->indexOf(widget));
 }
 
-void CustomBeepSettings::ChangedArrayItem(ArrayItemWidget* widget, const char* name, int value) {
+void CustomBeepSettings::ChangedArrayItem(ArrayItemWidget *widget, const char *name, int value)
+{
 	int index = m_List->indexOf(widget);
 	obs_data_t *item = obs_data_array_item(m_Settings, index);
 	obs_data_set_int(item, name, value);
 }
 
-std::vector<Event> CustomBeepSettings::GetEvents() {
+std::vector<Event> CustomBeepSettings::GetEvents()
+{
 	std::vector<Event> events;
-	
+
 	for (int i = 0; i < obs_data_array_count(m_Settings); i++) {
 		Event current;
 		obs_data_t *item = obs_data_array_item(m_Settings, i);
@@ -208,7 +211,7 @@ std::vector<Event> CustomBeepSettings::GetEvents() {
 	return events;
 }
 
-void CustomBeepSettings::WindowClosed(int result) 
+void CustomBeepSettings::WindowClosed(int result)
 {
 	delete m_Window;
 	m_Window = nullptr;
