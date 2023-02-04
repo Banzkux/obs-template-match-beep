@@ -42,7 +42,7 @@ package() {
   autoload -Uz set_loglevel log_info log_error log_output check_${host_os}
 
   local -i _verbosity=1
-  local -r _version='1.1.0'
+  local -r _version='1.1.1'
   local -r -a _valid_targets=(
     macos-x86_64
     macos-arm64

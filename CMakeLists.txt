@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.16...3.21)
 
-project(obs-template-match-beep VERSION 1.1.0)
+project(obs-template-match-beep VERSION 1.1.1)
 add_library(${CMAKE_PROJECT_NAME} MODULE)
 
 set(PLUGIN_AUTHOR "Janne Pitkänen")

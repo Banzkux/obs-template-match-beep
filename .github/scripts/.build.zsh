@@ -51,7 +51,7 @@ build() {
 
   typeset -g -a skips=()
   local -i _verbosity=1
-  local -r _version='1.1.0'
+  local -r _version='1.1.1'
   local -r -a _valid_targets=(
     macos-x86_64
     macos-arm64
