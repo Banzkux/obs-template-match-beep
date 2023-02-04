@@ -44,8 +44,13 @@ ArrayItemWidget::ArrayItemWidget(obs_data_t *item, CustomBeepSettings *settings,
 }
 
 ArrayItemWidget::ArrayItemWidget(CustomBeepSettings *settings, QWidget *parent)
-	: QWidget(parent), m_Settings(settings), m_Layout(nullptr), m_Type(nullptr), m_Length(nullptr), 
-	m_Frequency(nullptr), m_Button(nullptr)
+	: QWidget(parent),
+	  m_Settings(settings),
+	  m_Layout(nullptr),
+	  m_Type(nullptr),
+	  m_Length(nullptr),
+	  m_Frequency(nullptr),
+	  m_Button(nullptr)
 {
 	m_Layout = new QHBoxLayout(this);
 	QMargins margins(0, 0, 0, 0);
