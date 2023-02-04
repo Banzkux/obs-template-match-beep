@@ -459,6 +459,7 @@ template_match_beep_filter_video(void *data, struct obs_source_frame *frame)
 	if (filter->source == nullptr)
 		filter->source = obs_filter_get_parent(filter->context);
 
+	if (filter->frame_ingest && lvk::FrameIngest::test_obs_frame(frame))
 	filter->current_frame = frame;
 
 	if (!filter->frame_ingest ||

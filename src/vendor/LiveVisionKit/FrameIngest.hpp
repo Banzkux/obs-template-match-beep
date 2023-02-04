@@ -97,6 +97,7 @@ protected:
 	static void split_planes(const cv::UMat &src, cv::UMat &p1,
 				 cv::UMat &p2);
 
+public:
 	static bool test_obs_frame(const obs_source_frame *frame);
 
 private:
