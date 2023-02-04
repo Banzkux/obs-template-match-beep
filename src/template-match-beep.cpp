@@ -17,6 +17,7 @@ with this program. If not, see <https://www.gnu.org/licenses/>
 */
 
 // Remember to bundle with the opencv binaries!
+#include "CustomBeepSettings.h"
 #ifdef __cplusplus
 #undef NO
 #undef YES
@@ -41,7 +42,6 @@ with this program. If not, see <https://www.gnu.org/licenses/>
 #endif
 
 #include "template-match-beep.generated.h"
-#include "CustomBeepSettings.h"
 
 OBS_DECLARE_MODULE()
 OBS_MODULE_USE_DEFAULT_LOCALE(PLUGIN_NAME, "en-US")
