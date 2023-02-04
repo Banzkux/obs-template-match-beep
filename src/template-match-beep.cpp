@@ -108,6 +108,8 @@ struct template_match_beep_data {
 	int xygroup_x2, xygroup_y2;
 
 	CustomBeepSettings* custom_settings;
+
+	signal_handler_t *signal_handler;
 };
 
 static const char *template_match_beep_filter_name(void *unused)
@@ -177,6 +179,40 @@ static void template_match_beep_filter_update(void *data, obs_data_t *settings)
 
 void thread_loop(void *data);
 
+void start_thread(void *data)
+{
+	struct template_match_beep_data *filter = (template_match_beep_data *)data;
+
+	if (filter->thread_active || !obs_source_enabled(filter->context))
+		return;
+
+	filter->thread_active = true;
+
+	filter->thread = std::thread(thread_loop, (void *)filter);
+}
+
+void end_thread(void *data)
+{
+	struct template_match_beep_data *filter = (template_match_beep_data *)data;
+
+	if (!filter->thread_active)
+		return;
+
+	filter->thread_active = false;
+
+	filter->thread.join();
+	filter->current_frame = nullptr;
+}
+
+static void template_match_beep_filter_enabled(void *data, calldata_t *calldata) {
+	bool enabled = calldata_bool(calldata, "enabled");
+
+	if (enabled)
+		start_thread(data);
+	else
+		end_thread(data);
+}
+
 static void *template_match_beep_filter_create(obs_data_t *settings,
 					       obs_source_t *context)
 {
@@ -186,13 +222,16 @@ static void *template_match_beep_filter_create(obs_data_t *settings,
 	filter->context = context;
 	template_match_beep_filter_update(filter, settings);
 	filter->current_frame = nullptr;
-	filter->thread_active = true;
-	filter->thread = std::thread(thread_loop, (void *)filter);
+
+	start_thread((void *)filter);
 
 	filter->source = nullptr;
 
 	filter->settings = settings;
 	filter->debug_view_active = false;
+
+	filter->signal_handler = obs_source_get_signal_handler(context);
+	signal_handler_connect(filter->signal_handler, "enable", template_match_beep_filter_enabled, filter);
 
 	return filter;
 }
@@ -202,7 +241,9 @@ static void template_match_beep_filter_destroy(void *data)
 	struct template_match_beep_data *filter =
 		(template_match_beep_data *)data;
 
-	filter->thread_active = false;
+	signal_handler_disconnect(filter->signal_handler, "enable", template_match_beep_filter_enabled, filter);
+
+	end_thread(data);
 	bfree(data);
 }
 
@@ -460,8 +501,8 @@ template_match_beep_filter_video(void *data, struct obs_source_frame *frame)
 		filter->source = obs_filter_get_parent(filter->context);
 
 	if (filter->frame_ingest && lvk::FrameIngest::test_obs_frame(frame))
-	filter->current_frame = frame;
-
+		filter->current_frame = frame;
+	
 	if (!filter->frame_ingest ||
 	    filter->frame_ingest->format() != frame->format)
 		filter->frame_ingest = lvk::FrameIngest::Select(frame->format);
@@ -474,6 +515,17 @@ template_match_beep_filter_video(void *data, struct obs_source_frame *frame)
 	}
 
 	return frame;
+}
+
+// De/activate are for the parent source (i.e. capture card source) so not the filter it self.
+static void template_match_beep_filter_activate(void *data)
+{
+	start_thread(data);
+}
+
+static void template_match_beep_filter_deactivate(void *data)
+{
+	end_thread(data);
 }
 
 bool obs_module_load(void)
@@ -493,6 +545,8 @@ bool obs_module_load(void)
 		template_match_beep_filter_video;
 	template_match_beep_filter.filter_remove =
 		template_match_beep_filter_remove;
+	template_match_beep_filter.activate = template_match_beep_filter_activate;
+	template_match_beep_filter.deactivate = template_match_beep_filter_deactivate;
 
 	obs_register_source(&template_match_beep_filter);
 	blog(LOG_INFO, "plugin loaded successfully (version %s)",
