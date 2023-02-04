@@ -99,11 +99,11 @@ private:
 
 	obs_data_array_t *m_Settings;
 
-	QDialog *m_Window;
+	QPushButton *m_Button;
+	QVBoxLayout *m_List;
 	QVBoxLayout *m_MainLayout;
 	QScrollArea *m_ScrollArea;
 	QWidget *m_TechArea;
-	QVBoxLayout *m_List;
-	QPushButton *m_Button;
+	QDialog *m_Window;
 };
 #endif // !CUSTOMBEEPSETTINGS_H

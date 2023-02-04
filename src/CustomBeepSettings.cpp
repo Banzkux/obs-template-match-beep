@@ -44,7 +44,8 @@ ArrayItemWidget::ArrayItemWidget(obs_data_t *item, CustomBeepSettings *settings,
 }
 
 ArrayItemWidget::ArrayItemWidget(CustomBeepSettings *settings, QWidget *parent)
-	: QWidget(parent), m_Settings(settings)
+	: QWidget(parent), m_Settings(settings), m_Layout(nullptr), m_Type(nullptr), m_Length(nullptr), 
+	m_Frequency(nullptr), m_Button(nullptr)
 {
 	m_Layout = new QHBoxLayout(this);
 	QMargins margins(0, 0, 0, 0);
@@ -151,7 +152,7 @@ void CustomBeepSettings::CreateOBSSettings(obs_data_t *settings)
 void CustomBeepSettings::LoadSettings()
 {
 	// Create UI from loaded settings
-	for (int i = 0; i < obs_data_array_count(m_Settings); i++) {
+	for (size_t i = 0; i < obs_data_array_count(m_Settings); i++) {
 		obs_data_t *item = obs_data_array_item(m_Settings, i);
 		m_List->addWidget(new ArrayItemWidget(item, this, m_Window));
 	}
@@ -217,7 +218,7 @@ std::vector<Event> CustomBeepSettings::GetEvents()
 {
 	std::vector<Event> events;
 
-	for (int i = 0; i < obs_data_array_count(m_Settings); i++) {
+	for (size_t i = 0; i < obs_data_array_count(m_Settings); i++) {
 		Event current;
 		obs_data_t *item = obs_data_array_item(m_Settings, i);
 		current.type = static_cast<EventType>(obs_data_get_int(item, SETTING_EVENT_TYPE));
