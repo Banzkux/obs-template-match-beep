@@ -177,7 +177,6 @@ void start_thread(void *data)
 		return;
 
 	filter->thread_active = true;
-
 	filter->thread = std::thread(thread_loop, (void *)filter);
 }
 
@@ -212,8 +211,6 @@ static void *template_match_beep_filter_create(obs_data_t *settings, obs_source_
 	filter->context = context;
 	template_match_beep_filter_update(filter, settings);
 	filter->current_frame = nullptr;
-
-	start_thread((void *)filter);
 
 	filter->source = nullptr;
 
@@ -454,6 +451,11 @@ static struct obs_source_frame *template_match_beep_filter_video(void *data,
 
 	if (filter->source == nullptr)
 		filter->source = obs_filter_get_parent(filter->context);
+
+	// Kind of hacky fix for starting the thread since during create the filter isn't active yet
+	if (!filter->thread_active && obs_source_enabled(filter->context) &&
+	    obs_source_active(filter->source))
+		start_thread(data);
 
 	if (filter->frame_ingest && lvk::FrameIngest::test_obs_frame(frame))
 		filter->current_frame = frame;
