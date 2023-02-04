@@ -47,7 +47,7 @@ function Build {
     $ProductVersion = $BuildSpec.version
 
     $script:DepsVersion = ''
-    $script:QtVersion = '5'
+    $script:QtVersion = '6'
     $script:VisualStudioVersion = ''
     $script:PlatformSDK = '10.0.18363.657'
 
