@@ -23,7 +23,7 @@ set(OBS_PLATFORM "")
 target_sources(
   ${CMAKE_PROJECT_NAME}
   PRIVATE src/template-match-beep.cpp src/vendor/LiveVisionKit/FrameIngest.cpp
-          src/vendor/abeep/sintable.cpp src/CustomBeepSettings.cpp)
+          src/vendor/abeep/sintable.cpp src/CustomBeepSettings.cpp src/audio.cpp)
 set(ABEEP_H src/vendor/abeep/abeep.h src/vendor/abeep/sintable.h)
 target_sources(
   ${CMAKE_PROJECT_NAME}

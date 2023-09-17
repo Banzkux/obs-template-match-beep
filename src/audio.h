@@ -19,10 +19,9 @@ with this program. If not, see <https://www.gnu.org/licenses/>
 #ifndef AUDIO_H
 #define AUDIO_H
 #define _USE_MATH_DEFINES
-#include <math.h>
 #include <cmath>
-#include <iostream>
-#include <fstream>
+#include <map>
+#include <math.h>
 #include <vector>
 
 const int sampleRate = 44100;
@@ -33,14 +32,8 @@ class SineOscillator {
 	float frequency, amplitude, angle = 0.0f, offset = 0.0f;
 
 public:
-	SineOscillator(float freq, float amp) : frequency(freq), amplitude(amp) {
-		offset = 2 * M_PI * frequency / sampleRate;
-	}
-	float process() { 
-		auto sample = amplitude * sin(angle);
-		angle += offset;
-		return sample;
-	}
+	SineOscillator(float freq, float amp);
+	float process();
 };
 
 typedef struct WAVE_HDR {
@@ -63,42 +56,8 @@ typedef struct WAVE_HDR {
 	uint32_t Subchunk2Size = 0;                        // Sampled data length
 } wav_hdr;
 
-std::vector<uint8_t> PcmToWave(std::vector<uint16_t> pcm)
-{
-	static_assert(sizeof(wav_hdr) == 44, "");
+std::vector<uint8_t> PcmToWave(std::vector<uint16_t> pcm);
 
-	auto fsize = pcm.size() * 2.0;
-
-	wav_hdr wav;
-	wav.ChunkSize = fsize + sizeof(wav_hdr) - 8;
-	wav.Subchunk2Size = fsize + sizeof(wav_hdr) - 44;
-
-	std::vector<uint8_t> output;
-	output.resize(sizeof(wav) + pcm.size() * sizeof(pcm[0]));
-	memcpy(output.data(), &wav, sizeof(wav));
-	memcpy(output.data() + sizeof(wav), pcm.data(), pcm.size() * sizeof(pcm[0]));
-	return output;
-}
-
-std::map<std::pair<float, float>, std::vector<uint8_t>> beepCache;
-
-std::vector<uint8_t> CreateBeep(float duration, float freq, float amp)
-{
-	if (auto search = beepCache.find(std::make_pair(duration, freq));
-	    search != beepCache.end()) {
-		return search->second;
-	}
-
-	SineOscillator sineOscillator(freq, amp);
-	auto maxAmplitude = pow(2, bitDepth - 1) - 1;
-	std::vector<uint16_t> input;
-	for (int i = 0; i < sampleRate * duration; i++) {
-		auto sample = sineOscillator.process();
-		input.push_back(static_cast<uint16_t>(sample * maxAmplitude));
-	}
-	auto result = PcmToWave(input);
-	beepCache[std::make_pair(duration, freq)] = result;
-	return result;
-}
+std::vector<uint8_t> CreateBeep(float duration, float freq, float amp);
 
 #endif
