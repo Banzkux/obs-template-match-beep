@@ -19,6 +19,10 @@ with this program. If not, see <https://www.gnu.org/licenses/>
 #ifndef CUSTOMBEEPSETTINGS_H
 #define CUSTOMBEEPSETTINGS_H
 
+#ifndef MSEC_TO_SEC
+#define MSEC_TO_SEC 0.001
+#endif
+
 #include <util/base.h>
 #include <obs-data.h>
 #include <QtWidgets>
