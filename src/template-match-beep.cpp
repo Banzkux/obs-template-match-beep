@@ -18,6 +18,7 @@ with this program. If not, see <https://www.gnu.org/licenses/>
 
 // Remember to bundle with the opencv binaries!
 #include "CustomBeepSettings.h"
+#include "audio.h"
 #ifdef __cplusplus
 #undef NO
 #undef YES
@@ -424,14 +425,13 @@ void thread_loop(void *data)
 
 				umat3.copyTo(filter->current_cv_frame);
 
-				// NOTE: the beep is synchronous!
+				// NOTE: Beep is asynchronous now, so we sleep always
 				// Beep and wait according to settings
 				for (Event e : filter->custom_settings->GetEvents()) {
 					if (e.type == EventType::Beep) {
 						beep(e.frequency, e.length);
-					} else {
-						preciseSleep(e.length * MSEC_TO_SEC);
-					}
+					} 
+					preciseSleep(e.length * MSEC_TO_SEC);
 				}
 				// Cooldown time until next template match
 				preciseSleep(filter->cooldown_timer * MSEC_TO_SEC);

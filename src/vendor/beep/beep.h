@@ -25,11 +25,19 @@
 #define BEEP_H
 
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
-/* On Windows use the built-in Beep() function from <utilapiset.h> */
-#include <Windows.h>
+
+#include <mmsystem.h>
+#pragma comment(lib, "winmm.lib")
+
+#ifndef MSEC_TO_SEC
+#define MSEC_TO_SEC 0.001
+#endif
+#include "audio.h"
+
 int beep(int freq, int ms)
 {
-	return Beep(freq, ms);
+	auto beep = CreateBeep(ms * MSEC_TO_SEC, freq, 1.0f);
+	return PlaySound(reinterpret_cast<LPCWSTR>(beep.data()), nullptr, SND_MEMORY | SND_ASYNC);
 }
 #elif __linux__
 /* On Linux use alsa in synchronous mode, open "default" device in signed 8-bit
