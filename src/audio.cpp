@@ -50,7 +50,6 @@ std::map<std::pair<float, float>, std::vector<uint8_t>> beepCache;
 
 std::vector<uint8_t> CreateBeep(float duration, float freq, float amp)
 {
-	//blog(LOG_INFO, "Beep cache size: %i", beepCache.size());
 	if (auto search = beepCache.find(std::make_pair(duration, freq));
 	    search != beepCache.end()) {
 		return search->second;

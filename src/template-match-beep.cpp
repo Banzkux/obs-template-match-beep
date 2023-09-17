@@ -113,9 +113,8 @@ struct template_match_beep_data {
 	signal_handler_t *signal_handler;
 };
 
-static const char *template_match_beep_filter_name(void *unused)
+static const char *template_match_beep_filter_name(void*)
 {
-	UNUSED_PARAMETER(unused);
 	return obs_module_text("Template Match Timer");
 }
 
@@ -236,7 +235,7 @@ static void template_match_beep_filter_destroy(void *data)
 	bfree(data);
 }
 
-bool template_match_beep_save_frame(obs_properties_t *props, obs_property_t *property, void *data)
+bool template_match_beep_save_frame(obs_properties_t*, obs_property_t*, void *data)
 {
 	struct template_match_beep_data *filter = (template_match_beep_data *)data;
 
@@ -252,19 +251,15 @@ bool template_match_beep_save_frame(obs_properties_t *props, obs_property_t *pro
 	if (!filename.isNull())
 		cv::imwrite(filename.toStdString(), umat2);
 
-	UNUSED_PARAMETER(props);
-	UNUSED_PARAMETER(property);
 	return true;
 }
 
-bool template_match_beep_settings(obs_properties_t *props, obs_property_t *property, void *data)
+bool template_match_beep_settings(obs_properties_t*, obs_property_t*, void *data)
 {
 	struct template_match_beep_data *filter = (template_match_beep_data *)data;
 
 	filter->custom_settings->ShowSettingsWindow();
 
-	UNUSED_PARAMETER(props);
-	UNUSED_PARAMETER(property);
 	return true;
 }
 
@@ -433,7 +428,7 @@ void thread_loop(void *data)
 		umat3.copyTo(filter->current_cv_frame);
 
 		// NOTE: Beep is asynchronous now, so we sleep always
-		// Beep and wait according to settings
+		// Beep and wait events according to settings
 		for (Event e : filter->custom_settings->GetEvents()) {
 			if (e.type == EventType::Beep) {
 				beep(e.frequency, e.length);
