@@ -20,6 +20,8 @@ with this program. If not, see <https://www.gnu.org/licenses/>
 #define AUDIO_H
 #define _USE_MATH_DEFINES
 #include <cmath>
+#include <cstdint>
+#include <cstring>
 #include <map>
 #include <math.h>
 #include <vector>
@@ -39,21 +41,21 @@ public:
 typedef struct WAVE_HDR {
 	/* RIFF Chunk Descriptor */
 	uint8_t RIFF[4] = {'R', 'I', 'F', 'F'}; // RIFF Header Magic header
-	uint32_t ChunkSize = 0;                     // RIFF Chunk Size
+	uint32_t ChunkSize = 0;                 // RIFF Chunk Size
 	uint8_t WAVE[4] = {'W', 'A', 'V', 'E'}; // WAVE Header
 	/* "fmt" sub-chunk */
 	uint8_t fmt[4] = {'f', 'm', 't', ' '}; // FMT header
 	uint32_t Subchunk1Size = 16;           // Size of the fmt chunk
 	uint16_t AudioFormat = 1;              // Audio format 1=PCM,6=mulaw,7=alaw,     257=IBM
 					       // Mu-Law, 258=IBM A-Law, 259=ADPCM
-	uint16_t NumOfChan = numberOfChannels;                // Number of channels 1=Mono 2=Sterio
+	uint16_t NumOfChan = numberOfChannels; // Number of channels 1=Mono 2=Sterio
 	uint32_t SamplesPerSec = sampleRate;   // Sampling Frequency in Hz
 	uint32_t bytesPerSec = SamplesPerSec * NumOfChan; // bytes per second
-	uint16_t blockAlign = bitDepth / 8 * NumOfChan;       // 2=16-bit mono, 4=16-bit stereo
-	uint16_t bitsPerSample = bitDepth;           // Number of bits per sample
+	uint16_t blockAlign = bitDepth / 8 * NumOfChan;   // 2=16-bit mono, 4=16-bit stereo
+	uint16_t bitsPerSample = bitDepth;                // Number of bits per sample
 	/* "data" sub-chunk */
 	uint8_t Subchunk2ID[4] = {'d', 'a', 't', 'a'}; // "data"  string
-	uint32_t Subchunk2Size = 0;                        // Sampled data length
+	uint32_t Subchunk2Size = 0;                    // Sampled data length
 } wav_hdr;
 
 std::vector<uint8_t> PcmToWave(std::vector<uint16_t> pcm);

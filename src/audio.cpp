@@ -23,7 +23,8 @@ SineOscillator::SineOscillator(float freq, float amp) : frequency(freq), amplitu
 	offset = 2 * (float)M_PI * frequency / sampleRate;
 }
 
-float SineOscillator::process() {
+float SineOscillator::process()
+{
 	auto sample = amplitude * sin(angle);
 	angle += offset;
 	return sample;
@@ -63,6 +64,6 @@ std::vector<uint8_t> CreateBeep(float duration, float freq, float amp)
 		input.push_back(static_cast<uint16_t>(sample * maxAmplitude));
 	}
 	auto result = PcmToWave(input);
-	beepCache[std::make_pair(duration, freq)] = result;
+	beepCache.emplace(std::make_pair(duration, freq), result);
 	return result;
 }
