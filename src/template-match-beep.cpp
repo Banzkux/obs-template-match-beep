@@ -18,6 +18,7 @@ with this program. If not, see <https://www.gnu.org/licenses/>
 
 // Remember to bundle with the opencv binaries!
 #include "CustomBeepSettings.h"
+#include "audio.h"
 #ifdef __cplusplus
 #undef NO
 #undef YES
@@ -112,9 +113,8 @@ struct template_match_beep_data {
 	signal_handler_t *signal_handler;
 };
 
-static const char *template_match_beep_filter_name(void *unused)
+static const char *template_match_beep_filter_name(void *)
 {
-	UNUSED_PARAMETER(unused);
 	return obs_module_text("Template Match Timer");
 }
 
@@ -235,7 +235,7 @@ static void template_match_beep_filter_destroy(void *data)
 	bfree(data);
 }
 
-bool template_match_beep_save_frame(obs_properties_t *props, obs_property_t *property, void *data)
+bool template_match_beep_save_frame(obs_properties_t *, obs_property_t *, void *data)
 {
 	struct template_match_beep_data *filter = (template_match_beep_data *)data;
 
@@ -251,19 +251,15 @@ bool template_match_beep_save_frame(obs_properties_t *props, obs_property_t *pro
 	if (!filename.isNull())
 		cv::imwrite(filename.toStdString(), umat2);
 
-	UNUSED_PARAMETER(props);
-	UNUSED_PARAMETER(property);
 	return true;
 }
 
-bool template_match_beep_settings(obs_properties_t *props, obs_property_t *property, void *data)
+bool template_match_beep_settings(obs_properties_t *, obs_property_t *, void *data)
 {
 	struct template_match_beep_data *filter = (template_match_beep_data *)data;
 
 	filter->custom_settings->ShowSettingsWindow();
 
-	UNUSED_PARAMETER(props);
-	UNUSED_PARAMETER(property);
 	return true;
 }
 
@@ -362,84 +358,76 @@ void thread_loop(void *data)
 		if (!obs_source_active(filter->source))
 			filter->current_frame = nullptr;
 
-		if (filter->current_frame != nullptr &&
-		    frame_ts != filter->current_frame->timestamp &&
-		    !filter->template_image.empty() && filter->frame_ingest) {
-			frame_ts = filter->current_frame->timestamp;
-			cv::UMat umatroi, umat, umat2, umat3;
-			filter->frame_ingest->upload(filter->current_frame, umat);
-			if (!filter->roi.empty() && !filter->auto_roi &&
-			    (filter->roi.width >= filter->template_image.cols &&
-			     filter->roi.height >= filter->template_image.rows)) {
-				umat(filter->roi).copyTo(umat);
-			}
-			// Changing color format, this may become issue
-			cv::cvtColor(umat, umat2, cv::COLOR_YUV2BGR, 4);
-
-			// Gray
-			cv::cvtColor(umat2, umat3, cv::COLOR_BGR2GRAY);
-			cv::Mat result;
-			int result_cols = umat3.cols - filter->template_image.cols + 1;
-			int result_rows = umat3.rows - filter->template_image.rows + 1;
-			result.create(result_rows, result_cols, CV_32FC1);
-
-			cv::matchTemplate(umat3, filter->template_image, result,
-					  cv::TM_CCOEFF_NORMED);
-
-			double minVal, maxVal;
-			cv::Point minLoc, maxLoc, matchLoc;
-			cv::minMaxLoc(result, &minVal, &maxVal, &minLoc, &maxLoc, cv::Mat());
-			matchLoc = maxLoc;
-
-			cv::threshold(result, result, 0.80, 1.0, cv::THRESH_TOZERO);
-			umat3.copyTo(filter->current_cv_frame);
-			// Detected template image!
-			if (maxVal > 0.8) {
-				filter->xygroup_x1 = matchLoc.x;
-				filter->xygroup_y1 = matchLoc.y;
-				filter->xygroup_x2 = matchLoc.x + filter->template_image.cols;
-				filter->xygroup_y2 = matchLoc.y + filter->template_image.rows;
-				cv::rectangle(umat3, matchLoc,
-					      cv::Point(filter->xygroup_x2, filter->xygroup_y2),
-					      cv::Scalar(255), 2, 8, 0);
-				if (filter->auto_roi) {
-					obs_data_set_bool(filter->settings, SETTING_AUTO_ROI,
-							  false);
-					obs_data_set_int(filter->settings, SETTING_XYGROUP_X1,
-							 matchLoc.x);
-					obs_data_set_int(filter->settings, SETTING_XYGROUP_Y1,
-							 matchLoc.y);
-					obs_data_set_int(filter->settings, SETTING_XYGROUP_X2,
-							 filter->xygroup_x2);
-					obs_data_set_int(filter->settings, SETTING_XYGROUP_Y2,
-							 filter->xygroup_y2);
-					filter->auto_roi = false;
-
-					filter->roi = cv::Rect(
-						matchLoc,
-						cv::Point(matchLoc.x + filter->template_image.cols,
-							  matchLoc.y +
-								  filter->template_image.rows));
-				}
-
-				umat3.copyTo(filter->current_cv_frame);
-
-				// NOTE: the beep is synchronous!
-				// Beep and wait according to settings
-				for (Event e : filter->custom_settings->GetEvents()) {
-					if (e.type == EventType::Beep) {
-						beep(e.frequency, e.length);
-					} else {
-						preciseSleep(e.length * MSEC_TO_SEC);
-					}
-				}
-				// Cooldown time until next template match
-				preciseSleep(filter->cooldown_timer * MSEC_TO_SEC);
-			}
-		} else {
-			// chill for a bit
+		if (filter->current_frame == nullptr ||
+		    frame_ts >= filter->current_frame->timestamp ||
+		    filter->template_image.empty() || !filter->frame_ingest) {
+			// Wait for next frame
 			std::this_thread::sleep_for(std::chrono::milliseconds(1));
+			continue;
 		}
+
+		frame_ts = filter->current_frame->timestamp;
+		cv::UMat umatroi, umat, umat2, umat3;
+		filter->frame_ingest->upload(filter->current_frame, umat);
+		if (!filter->roi.empty() && !filter->auto_roi &&
+		    (filter->roi.width >= filter->template_image.cols &&
+		     filter->roi.height >= filter->template_image.rows)) {
+			umat(filter->roi).copyTo(umat);
+		}
+		// Changing color format, this may become issue
+		cv::cvtColor(umat, umat2, cv::COLOR_YUV2BGR, 4);
+
+		// Gray
+		cv::cvtColor(umat2, umat3, cv::COLOR_BGR2GRAY);
+		cv::Mat result;
+		int result_cols = umat3.cols - filter->template_image.cols + 1;
+		int result_rows = umat3.rows - filter->template_image.rows + 1;
+		result.create(result_rows, result_cols, CV_32FC1);
+
+		cv::matchTemplate(umat3, filter->template_image, result, cv::TM_CCOEFF_NORMED);
+
+		double minVal, maxVal;
+		cv::Point minLoc, maxLoc, matchLoc;
+		cv::minMaxLoc(result, &minVal, &maxVal, &minLoc, &maxLoc, cv::Mat());
+		matchLoc = maxLoc;
+
+		cv::threshold(result, result, 0.80, 1.0, cv::THRESH_TOZERO);
+		umat3.copyTo(filter->current_cv_frame);
+		// Detected template image!
+		if (maxVal < 0.8)
+			continue;
+
+		filter->xygroup_x1 = matchLoc.x;
+		filter->xygroup_y1 = matchLoc.y;
+		filter->xygroup_x2 = matchLoc.x + filter->template_image.cols;
+		filter->xygroup_y2 = matchLoc.y + filter->template_image.rows;
+		cv::rectangle(umat3, matchLoc, cv::Point(filter->xygroup_x2, filter->xygroup_y2),
+			      cv::Scalar(255), 2, 8, 0);
+		if (filter->auto_roi) {
+			obs_data_set_bool(filter->settings, SETTING_AUTO_ROI, false);
+			obs_data_set_int(filter->settings, SETTING_XYGROUP_X1, matchLoc.x);
+			obs_data_set_int(filter->settings, SETTING_XYGROUP_Y1, matchLoc.y);
+			obs_data_set_int(filter->settings, SETTING_XYGROUP_X2, filter->xygroup_x2);
+			obs_data_set_int(filter->settings, SETTING_XYGROUP_Y2, filter->xygroup_y2);
+			filter->auto_roi = false;
+
+			filter->roi = cv::Rect(matchLoc,
+					       cv::Point(matchLoc.x + filter->template_image.cols,
+							 matchLoc.y + filter->template_image.rows));
+		}
+
+		umat3.copyTo(filter->current_cv_frame);
+
+		// NOTE: Beep is asynchronous now, so we sleep always
+		// Beep and wait events according to settings
+		for (Event e : filter->custom_settings->GetEvents()) {
+			if (e.type == EventType::Beep) {
+				beep(e.frequency, e.length);
+			}
+			preciseSleep(e.length * MSEC_TO_SEC);
+		}
+		// Cooldown time until next template match
+		preciseSleep(filter->cooldown_timer * MSEC_TO_SEC);
 	}
 }
 

@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.16...3.21)
 
-project(obs-template-match-beep VERSION 1.1.1)
+project(obs-template-match-beep VERSION 1.1.2)
 add_library(${CMAKE_PROJECT_NAME} MODULE)
 
 set(PLUGIN_AUTHOR "Janne Pitkänen")
@@ -23,12 +23,12 @@ set(OBS_PLATFORM "")
 target_sources(
   ${CMAKE_PROJECT_NAME}
   PRIVATE src/template-match-beep.cpp src/vendor/LiveVisionKit/FrameIngest.cpp
-          src/vendor/abeep/sintable.cpp src/CustomBeepSettings.cpp)
+          src/vendor/abeep/sintable.cpp src/CustomBeepSettings.cpp src/audio.cpp)
 set(ABEEP_H src/vendor/abeep/abeep.h src/vendor/abeep/sintable.h)
 target_sources(
   ${CMAKE_PROJECT_NAME}
   PRIVATE src/template-match-beep.generated.h src/vendor/LiveVisionKit/FrameIngest.hpp
-          src/vendor/beep/beep.h ${ABEEP_H} src/CustomBeepSettings.h)
+          src/vendor/beep/beep.h ${ABEEP_H} src/CustomBeepSettings.h src/audio.h)
 
 # Import libobs as main plugin dependency
 find_package(libobs REQUIRED)

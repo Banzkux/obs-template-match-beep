@@ -18,6 +18,7 @@ with this program. If not, see <https://www.gnu.org/licenses/>
 
 #include "CustomBeepSettings.h"
 #include "template-match-beep.generated.h"
+#include "audio.h"
 
 MouseWheelWidgetAdjustmentGuard::MouseWheelWidgetAdjustmentGuard(QObject *parent) : QObject(parent)
 {
@@ -151,6 +152,12 @@ void CustomBeepSettings::CreateOBSSettings(obs_data_t *settings)
 	if (m_Settings == nullptr) {
 		m_Settings = obs_data_array_create();
 		obs_data_set_array(settings, SETTING_EVENT_ARRAY, m_Settings);
+	}
+	// Create the beeps to cache
+	for (Event e : GetEvents()) {
+		if (e.type == EventType::Beep) {
+			CreateBeep(e.length * MSEC_TO_SEC, e.frequency, 1.0f);
+		}
 	}
 }
 
